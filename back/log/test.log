@@ -1,0 +1,180 @@
+  [1m[35m (7.8ms)[0m  [1m[35mDROP DATABASE IF EXISTS `myapp_test`[0m
+  [1m[35m (1.6ms)[0m  [1m[35mCREATE DATABASE `myapp_test` DEFAULT COLLATE `utf8mb4_unicode_ci`[0m
+  [1m[35m (1.3ms)[0m  [1m[35mDROP TABLE IF EXISTS `posts` CASCADE[0m
+  [1m[35m (8.5ms)[0m  [1m[35mCREATE TABLE `posts` (`id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY, `title` varchar(255), `body` text, `created_at` datetime(6) NOT NULL, `updated_at` datetime(6) NOT NULL) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci[0m
+  [1m[35m (6.8ms)[0m  [1m[35mCREATE TABLE `schema_migrations` (`version` varchar(255) NOT NULL PRIMARY KEY)[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.3ms)[0m  [1m[34mSELECT `schema_migrations`.`version` FROM `schema_migrations` ORDER BY `schema_migrations`.`version` ASC[0m
+  [1m[35m (2.9ms)[0m  [1m[32mINSERT INTO `schema_migrations` (version) VALUES (20251216010819)[0m
+  [1m[35m (6.5ms)[0m  [1m[35mCREATE TABLE `ar_internal_metadata` (`key` varchar(255) NOT NULL PRIMARY KEY, `value` varchar(255), `created_at` datetime(6) NOT NULL, `updated_at` datetime(6) NOT NULL)[0m
+  [1m[36mActiveRecord::InternalMetadata Load (0.3ms)[0m  [1m[34mSELECT * FROM `ar_internal_metadata` WHERE `ar_internal_metadata`.`key` = 'environment' ORDER BY `ar_internal_metadata`.`key` ASC LIMIT 1[0m
+  [1m[36mActiveRecord::InternalMetadata Create (1.2ms)[0m  [1m[32mINSERT INTO `ar_internal_metadata` (`key`, `value`, `created_at`, `updated_at`) VALUES ('environment', 'test', '2025-12-16 01:18:00.215496', '2025-12-16 01:18:00.215497')[0m
+  [1m[36mActiveRecord::InternalMetadata Load (0.1ms)[0m  [1m[34mSELECT * FROM `ar_internal_metadata` WHERE `ar_internal_metadata`.`key` = 'environment' ORDER BY `ar_internal_metadata`.`key` ASC LIMIT 1[0m
+  [1m[36mActiveRecord::InternalMetadata Load (0.1ms)[0m  [1m[34mSELECT * FROM `ar_internal_metadata` WHERE `ar_internal_metadata`.`key` = 'schema_sha1' ORDER BY `ar_internal_metadata`.`key` ASC LIMIT 1[0m
+  [1m[36mActiveRecord::InternalMetadata Create (1.4ms)[0m  [1m[32mINSERT INTO `ar_internal_metadata` (`key`, `value`, `created_at`, `updated_at`) VALUES ('schema_sha1', '360704b793f895219464067b00819c231e6ff1e3', '2025-12-16 01:18:00.223472', '2025-12-16 01:18:00.223473')[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.2ms)[0m  [1m[34mSELECT `schema_migrations`.`version` FROM `schema_migrations` ORDER BY `schema_migrations`.`version` ASC[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  [1m[35mSQL (0.3ms)[0m  [1m[34mSELECT @@FOREIGN_KEY_CHECKS[0m
+  [1m[35m (0.1ms)[0m  [1m[35mSET FOREIGN_KEY_CHECKS = 0[0m
+  [1m[36mFixtures Load (1.4ms)[0m  [1m[31mDELETE FROM `posts`;
+INSERT INTO `posts` (`id`, `title`, `body`, `created_at`, `updated_at`) VALUES (980190962, 'MyString', 'MyText', '2025-12-16 01:18:00.327864', '2025-12-16 01:18:00.327864'), (298486374, 'MyString', 'MyText', '2025-12-16 01:18:00.327864', '2025-12-16 01:18:00.327864')[0m
+  [1m[35m (0.1ms)[0m  [1m[35mSET FOREIGN_KEY_CHECKS = 1[0m
+  [1m[36mTRANSACTION (1.6ms)[0m  [1m[35mCOMMIT[0m
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+------------------------------------------
+PostsControllerTest: test_should_show_post
+------------------------------------------
+  [1m[36mPost Load (0.3ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+Started GET "/posts/980190962" for 127.0.0.1 at 2025-12-15 20:18:00 -0500
+Processing by PostsController#show as JSON
+  Parameters: {"id" => "980190962", "post" => {}}
+  [1m[36mCACHE Post Load (0.0ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+Completed 200 OK in 16ms (Views: 0.3ms | ActiveRecord: 0.0ms (1 query, 1 cached) | GC: 1.2ms)
+  [1m[36mTRANSACTION (0.4ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+------------------------------------------------------------------
+PostsControllerTest: test_should_display_posts_in_descending_order
+------------------------------------------------------------------
+  [1m[36mPost Load (0.4ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+Started GET "/posts" for 127.0.0.1 at 2025-12-15 20:18:00 -0500
+Processing by PostsController#index as JSON
+  Parameters: {"post" => {}}
+  [1m[36mPost Load (0.4ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` ORDER BY `posts`.`created_at` DESC[0m
+Completed 200 OK in 4ms (Views: 1.7ms | ActiveRecord: 0.1ms (1 query, 0 cached) | GC: 0.0ms)
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+------------------------------------------
+PostsControllerTest: test_should_get_index
+------------------------------------------
+  [1m[36mPost Load (0.6ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+Started GET "/posts" for 127.0.0.1 at 2025-12-15 20:18:00 -0500
+Processing by PostsController#index as JSON
+  Parameters: {"post" => {}}
+  [1m[36mPost Load (0.1ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` ORDER BY `posts`.`created_at` DESC[0m
+Completed 200 OK in 4ms (Views: 3.7ms | ActiveRecord: 0.1ms (1 query, 0 cached) | GC: 0.0ms)
+  [1m[36mTRANSACTION (0.5ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mTRANSACTION (0.8ms)[0m  [1m[35mBEGIN[0m
+--------------------------------------------
+PostsControllerTest: test_should_update_post
+--------------------------------------------
+  [1m[36mPost Load (0.4ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+Started PATCH "/posts/980190962" for 127.0.0.1 at 2025-12-15 20:18:00 -0500
+Processing by PostsController#update as JSON
+  Parameters: {"post" => {"body" => "MyText", "title" => "MyString"}, "id" => "980190962"}
+  [1m[36mCACHE Post Load (0.1ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+Completed 200 OK in 17ms (Views: 6.5ms | ActiveRecord: 0.0ms (1 query, 1 cached) | GC: 0.4ms)
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+---------------------------------------------
+PostsControllerTest: test_should_destroy_post
+---------------------------------------------
+  [1m[36mPost Load (0.2ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+  [1m[36mPost Count (0.4ms)[0m  [1m[34mSELECT COUNT(*) FROM `posts`[0m
+Started DELETE "/posts/980190962" for 127.0.0.1 at 2025-12-15 20:18:00 -0500
+Processing by PostsController#destroy as JSON
+  Parameters: {"id" => "980190962", "post" => {}}
+  [1m[36mCACHE Post Load (0.0ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
+  [1m[36mPost Destroy (0.5ms)[0m  [1m[31mDELETE FROM `posts` WHERE `posts`.`id` = 980190962[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
+Completed 204 No Content in 7ms (ActiveRecord: 0.8ms (2 queries, 1 cached) | GC: 0.0ms)
+  [1m[36mPost Count (0.2ms)[0m  [1m[34mSELECT COUNT(*) FROM `posts`[0m
+  [1m[36mTRANSACTION (1.2ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+--------------------------------------------
+PostsControllerTest: test_should_create_post
+--------------------------------------------
+  [1m[36mPost Load (0.1ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+  [1m[36mPost Count (0.2ms)[0m  [1m[34mSELECT COUNT(*) FROM `posts`[0m
+Started POST "/posts" for 127.0.0.1 at 2025-12-15 20:18:00 -0500
+Processing by PostsController#create as JSON
+  Parameters: {"post" => {"body" => "MyText", "title" => "MyString"}}
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
+  [1m[36mPost Create (0.6ms)[0m  [1m[32mINSERT INTO `posts` (`title`, `body`, `created_at`, `updated_at`) VALUES ('MyString', 'MyText', '2025-12-16 01:18:00.613898', '2025-12-16 01:18:00.613898')[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
+Completed 201 Created in 8ms (Views: 1.0ms | ActiveRecord: 0.7ms (1 query, 0 cached) | GC: 0.5ms)
+  [1m[36mPost Count (0.2ms)[0m  [1m[34mSELECT COUNT(*) FROM `posts`[0m
+  [1m[36mTRANSACTION (0.9ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mActiveRecord::InternalMetadata Load (0.3ms)[0m  [1m[34mSELECT * FROM `ar_internal_metadata` WHERE `ar_internal_metadata`.`key` = 'schema_sha1' ORDER BY `ar_internal_metadata`.`key` ASC LIMIT 1[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.2ms)[0m  [1m[34mSELECT `schema_migrations`.`version` FROM `schema_migrations` ORDER BY `schema_migrations`.`version` ASC[0m
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  [1m[35mSQL (2.7ms)[0m  [1m[34mSELECT @@FOREIGN_KEY_CHECKS[0m
+  [1m[35m (0.1ms)[0m  [1m[35mSET FOREIGN_KEY_CHECKS = 0[0m
+  [1m[36mFixtures Load (1.3ms)[0m  [1m[31mDELETE FROM `posts`;
+INSERT INTO `posts` (`id`, `title`, `body`, `created_at`, `updated_at`) VALUES (980190962, 'MyString', 'MyText', '2025-12-16 01:18:23.845859', '2025-12-16 01:18:23.845859'), (298486374, 'MyString', 'MyText', '2025-12-16 01:18:23.845859', '2025-12-16 01:18:23.845859')[0m
+  [1m[35m (0.2ms)[0m  [1m[35mSET FOREIGN_KEY_CHECKS = 1[0m
+  [1m[36mTRANSACTION (11.7ms)[0m  [1m[35mCOMMIT[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+--------------------------------------------
+PostsControllerTest: test_should_create_post
+--------------------------------------------
+  [1m[36mPost Load (0.2ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+  [1m[36mPost Count (0.3ms)[0m  [1m[34mSELECT COUNT(*) FROM `posts`[0m
+Started POST "/posts" for 127.0.0.1 at 2025-12-15 20:18:23 -0500
+Processing by PostsController#create as JSON
+  Parameters: {"post" => {"body" => "MyText", "title" => "MyString"}}
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
+  [1m[36mPost Create (0.8ms)[0m  [1m[32mINSERT INTO `posts` (`title`, `body`, `created_at`, `updated_at`) VALUES ('MyString', 'MyText', '2025-12-16 01:18:23.980667', '2025-12-16 01:18:23.980667')[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
+Completed 201 Created in 20ms (Views: 1.5ms | ActiveRecord: 1.0ms (1 query, 0 cached) | GC: 0.0ms)
+  [1m[36mPost Count (0.3ms)[0m  [1m[34mSELECT COUNT(*) FROM `posts`[0m
+  [1m[36mTRANSACTION (12.0ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mTRANSACTION (1.0ms)[0m  [1m[35mBEGIN[0m
+------------------------------------------------------------------
+PostsControllerTest: test_should_display_posts_in_descending_order
+------------------------------------------------------------------
+  [1m[36mPost Load (0.4ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+Started GET "/posts" for 127.0.0.1 at 2025-12-15 20:18:24 -0500
+Processing by PostsController#index as JSON
+  Parameters: {"post" => {}}
+  [1m[36mPost Load (0.2ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` ORDER BY `posts`.`created_at` DESC[0m
+Completed 200 OK in 5ms (Views: 2.9ms | ActiveRecord: 0.2ms (1 query, 0 cached) | GC: 0.0ms)
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+---------------------------------------------
+PostsControllerTest: test_should_destroy_post
+---------------------------------------------
+  [1m[36mPost Load (1.5ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+  [1m[36mPost Count (0.3ms)[0m  [1m[34mSELECT COUNT(*) FROM `posts`[0m
+Started DELETE "/posts/980190962" for 127.0.0.1 at 2025-12-15 20:18:24 -0500
+Processing by PostsController#destroy as JSON
+  Parameters: {"id" => "980190962", "post" => {}}
+  [1m[36mCACHE Post Load (0.3ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mSAVEPOINT active_record_1[0m
+  [1m[36mPost Destroy (1.5ms)[0m  [1m[31mDELETE FROM `posts` WHERE `posts`.`id` = 980190962[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mRELEASE SAVEPOINT active_record_1[0m
+Completed 204 No Content in 17ms (ActiveRecord: 1.7ms (2 queries, 1 cached) | GC: 0.0ms)
+  [1m[36mPost Count (0.3ms)[0m  [1m[34mSELECT COUNT(*) FROM `posts`[0m
+  [1m[36mTRANSACTION (0.7ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+------------------------------------------
+PostsControllerTest: test_should_show_post
+------------------------------------------
+  [1m[36mPost Load (0.1ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+Started GET "/posts/980190962" for 127.0.0.1 at 2025-12-15 20:18:24 -0500
+Processing by PostsController#show as JSON
+  Parameters: {"id" => "980190962", "post" => {}}
+  [1m[36mCACHE Post Load (0.1ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+Completed 200 OK in 1ms (Views: 0.6ms | ActiveRecord: 0.0ms (1 query, 1 cached) | GC: 0.0ms)
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+--------------------------------------------
+PostsControllerTest: test_should_update_post
+--------------------------------------------
+  [1m[36mPost Load (0.1ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+Started PATCH "/posts/980190962" for 127.0.0.1 at 2025-12-15 20:18:24 -0500
+Processing by PostsController#update as JSON
+  Parameters: {"post" => {"body" => "MyText", "title" => "MyString"}, "id" => "980190962"}
+  [1m[36mCACHE Post Load (0.0ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+Completed 200 OK in 4ms (Views: 2.0ms | ActiveRecord: 0.0ms (1 query, 1 cached) | GC: 0.0ms)
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+------------------------------------------
+PostsControllerTest: test_should_get_index
+------------------------------------------
+  [1m[36mPost Load (0.1ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` WHERE `posts`.`id` = 980190962 LIMIT 1[0m
+Started GET "/posts" for 127.0.0.1 at 2025-12-15 20:18:24 -0500
+Processing by PostsController#index as JSON
+  Parameters: {"post" => {}}
+  [1m[36mPost Load (0.1ms)[0m  [1m[34mSELECT `posts`.* FROM `posts` ORDER BY `posts`.`created_at` DESC[0m
+Completed 200 OK in 8ms (Views: 7.9ms | ActiveRecord: 0.1ms (1 query, 0 cached) | GC: 0.0ms)
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK[0m
