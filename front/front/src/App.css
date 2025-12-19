@@ -1,0 +1,31 @@
+/* remove all default spacing */
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: rgb(10, 24, 177);
+}
+
+/* header */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 99%;
+  height: 60px;
+  text-align: left;
+  padding: 0 15px;
+  justify-content: space-between; 
+  align-items: center;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+}
+
+.Title {
+    font-size: 2em;
+    font-weight: bold;
+    margin-top: 0.67em;
+    margin-bottom: 0.67em;
+}
+
+
