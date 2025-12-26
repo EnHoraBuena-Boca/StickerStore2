@@ -1,8 +1,14 @@
 Rails.application.routes.draw do
+  resources :original_cards
+  resources :users
   #API routes should be in /api/v1
   namespace :api do
     namespace :v1 do
-        resources :posts
+        post 'login', to: 'users#login'
+        get 'me', to: 'users#me'
+        get 'unapproved', to: 'original_cards#unapproved'
+        post 'approved', to: 'original_cards#approved'
+        resources :users, :original_cards
     end
   end 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

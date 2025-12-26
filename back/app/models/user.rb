@@ -1,3 +1,5 @@
-class User < ActiveRecord::Base 
-  
+class User < ApplicationRecord  
+  enum :status, { normal: 0, moderator: 1, card_approver: 2}
+  validates :first_name, presence: true, uniqueness: { case_sensitive: false }
+
 end
