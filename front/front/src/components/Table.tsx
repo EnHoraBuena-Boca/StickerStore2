@@ -1,6 +1,11 @@
 import { DataGrid } from "@mui/x-data-grid";
+import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import type { GridColDef } from "@mui/x-data-grid";
 import Paper from "@mui/material/Paper";
+import Button from "@mui/material/Button";
+import { ApproveCards } from "./CardApi.ts";
+import Alert from "@mui/material/Alert";
+
 import * as React from "react";
 
 const columns: GridColDef[] = [
@@ -25,7 +30,32 @@ interface TableProps {
 const paginationModel = { page: 0, pageSize: 5 };
 
 export default function DataTable({ rows }: TableProps) {
+  const [rowSelectionModel, setRowSelectionModel] =
+    React.useState<GridRowSelectionModel>({ type: "include", ids: new Set() });
+  const [submit, setSubmit] = React.useState(false);
+  const [error, setError] = React.useState(false);
 
+  const handleClick = () => {
+    ApproveCards(rowSelectionModel.ids).then((result: any) => {
+        console.log(result);
+        if(result) {
+            window.location.reload();
+        }
+        else {
+            setError(true);
+        }
+    });
+  };
+
+  React.useEffect(() => {
+    if (!error) return;
+
+    const timer = setTimeout(() => {
+      setError(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [error]);
   return (
     <Paper sx={{ height: 400, width: "100%" }}>
       <DataGrid
@@ -34,8 +64,23 @@ export default function DataTable({ rows }: TableProps) {
         initialState={{ pagination: { paginationModel } }}
         pageSizeOptions={[5, 10]}
         checkboxSelection
+        onRowSelectionModelChange={(newRowSelectionModel) => {
+          setRowSelectionModel(newRowSelectionModel);
+          if (newRowSelectionModel.ids.size > 0) {
+            setSubmit(true);
+          } else {
+            setSubmit(false);
+          }
+        }}
+        rowSelectionModel={rowSelectionModel}
         sx={{ border: 0 }}
       />
+      {submit && (
+        <Button variant="contained" onClick={handleClick}>
+          Submit for Approval
+        </Button>
+      )}
+      {error && <Alert severity="error">Server error, contact admin</Alert>}
     </Paper>
   );
 }

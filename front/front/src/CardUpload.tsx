@@ -11,8 +11,8 @@ import Alert from "@mui/material/Alert";
 
 import * as React from "react";
 import Table from "./components/Table.tsx";
-import { createCard } from "./components/UserApi";
-import { UnapprovedCards } from "./components/UserApi";
+import { createCard } from "./components/CardApi.ts";
+import { UnapprovedCards } from "./components/CardApi.ts";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
