@@ -14,6 +14,35 @@ class Api::V1::UserCardsController < ApplicationController
     render json: @user_card
   end
 
+  def get_user_card_count 
+    user_cards = UserCard.where(user_id: session[:current_user_id]).count
+    unless user_cards == 0
+      render json: user_cards
+    end
+
+  end
+
+  def cards_with_params
+    puts default_per_page
+    if params[:cardtype].empty?
+      @user_cards = UserCard.where(user_id: session[:current_user_id], card_name: params[:name])
+      @user_cards = @user_cards.then(&paginate)
+
+      render json: @user_cards
+    elsif params[:name].empty?
+      
+      @user_cards = UserCard.where(user_id: session[:current_user_id], cardtype: params[:cardtype])
+      @user_cards = @user_cards.then(&paginate)
+      
+      render json: @user_cards
+    else
+      @user_cards = UserCard.where(user_id: session[:current_user_id], cardtype: params[:cardtype], card_name: params[:name])
+      @user_cards = @user_cards.then(&paginate)
+      
+      render json: @user_cards
+    end
+  end
+
 
   def pack
     user = User.find_by(id: session[:current_user_id])
@@ -24,7 +53,7 @@ class Api::V1::UserCardsController < ApplicationController
     end
     UserCard.transaction do
       pack.each do |card|
-        @new_card = UserCard.create(user: user, season: 23, cardtype: card.cardtype, api_id: card.api_id )
+        @new_card = UserCard.create(user: user, season: 23, cardtype: card.cardtype, api_id: card.api_id, card_name: card.name )
         @new_card.save!
         card_public_ids.append("Stickers/"+card.cardtype+"/"+card.api_id)
       end

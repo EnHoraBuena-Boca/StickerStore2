@@ -16,7 +16,6 @@ const columns: GridColDef[] = [
   { field: "approved", headerName: "Approved", width: 130 },
 ];
 
-//Add back Id number for CARD later
 interface Image {
   id: number;
   name: string;
