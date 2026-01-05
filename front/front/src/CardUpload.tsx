@@ -29,7 +29,7 @@ const VisuallyHiddenInput = styled("input")({
 interface Image {
   id: number;
   name: string;
-  Cardtype: string;
+  cardtype: string;
   approved: string;
 }
 
@@ -61,7 +61,7 @@ export default function BasicTextFields() {
           addRow({
             id: result.id,
             name: result.name,
-            Cardtype: result.Cardtype,
+            cardtype: result.cardtype,
             approved: result.approved,
           });
           setsemiSuccess(true);

@@ -1,6 +1,9 @@
 import { useEffect } from 'react'
 import Menu from './Menu.tsx'
 import CardUpload from './CardUpload.tsx';
+import PackPage from "./PackPage.tsx";
+import MyFolder from "./MyFolder.tsx";
+
 import Home from './Home.tsx';
 import {Routes, Route} from 'react-router-dom';
 import {Link} from 'react-router-dom';
@@ -16,17 +19,22 @@ function App() {
 
   return (
     <>
-    <Routes>
-      <Route path="/CardUpload" element={<CardUpload />} />
-      <Route path="/" element={<Home />} />
-    </Routes>
+      <Routes>
+        <Route path="/CardUpload" element={<CardUpload />} />
+        <Route path="/PackPage" element={<PackPage />} />
+        <Route path="/MyFolder" element={<MyFolder />} />
 
-    <header className="site-header">
-      <Link to= "/" className='Title'>SSL Sticker Store</Link>
-      <Menu/>
-    </header>
+        <Route path="/" element={<Home />} />
+      </Routes>
+
+      <header className="site-header">
+        <Link to="/" className="Title">
+          SSL Sticker Store
+        </Link>
+        <Menu />
+      </header>
     </>
-  )
+  );
 }
 
 export default App

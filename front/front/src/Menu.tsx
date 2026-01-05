@@ -11,7 +11,6 @@ import PersonAdd from "@mui/icons-material/PersonAdd";
 import SignUp from "./components/SignUp.tsx";
 import { Link } from "react-router-dom";
 
-
 export default function AccountMenu() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -87,11 +86,11 @@ export default function AccountMenu() {
           <Avatar /> Profile
         </MenuItem>
         <Divider />
-        <MenuItem onClick={handleClose}>
-          <ListItemIcon>
-            <PersonAdd fontSize="small" />
-          </ListItemIcon>
-          Add another account
+        <MenuItem component={Link} to="/PackPage" onClick={handleClose}>
+          Packs
+        </MenuItem>
+        <MenuItem component={Link} to="/MyFolder" onClick={handleClose}>
+          MyFolder
         </MenuItem>
         <MenuItem component={Link} to="/CardUpload" onClick={handleClose}>
           Card Upload

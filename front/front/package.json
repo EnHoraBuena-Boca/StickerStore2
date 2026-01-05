@@ -19,8 +19,10 @@
     "@mui/material": "^7.3.6",
     "@mui/x-data-grid": "^8.22.1",
     "cloudinary-core": "^2.14.0",
+    "motion": "^12.23.26",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-photo-album": "^3.4.0",
     "react-router-dom": "^7.11.0"
   },
   "devDependencies": {

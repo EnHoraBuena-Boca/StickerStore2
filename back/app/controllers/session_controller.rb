@@ -6,8 +6,8 @@ class SessionsController < ApplicationController
     if user&.password == params[:password]
       # Save the user ID in the session so it can be used in
       # subsequent requests
-      session[:current_user_id] = user.user_id
-      render json: {user_id: user.user_id}
+      session[:current_user_id] = user.id
+      render json: {user_id: user.id}
     end
   end
 

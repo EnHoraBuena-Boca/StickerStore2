@@ -29,7 +29,7 @@ class Api::V1::UsersController < ApplicationController
     user = User.find_by(first_name: params[:user][:first_name])
     if user&.password == params[:user][:password]
       session[:current_user_id] = user.id
-      render json: { id: user.user_id, firstname: user.first_name}, status: :ok
+      render json: { id: user.id, firstname: user.first_name}, status: :ok
     else
       render json: { error: "Invalid credentials" }, status: :unauthorized
     end
@@ -37,7 +37,7 @@ class Api::V1::UsersController < ApplicationController
 
   def me
     if current_user
-      render json: { user_id: current_user.user_id, status: current_user.status }
+      render json: { user_id: current_user.id, status: current_user.status }
     else
       render json: { user: nil }, status: :unauthorized
     end
@@ -61,7 +61,7 @@ class Api::V1::UsersController < ApplicationController
   private
 
     def current_user
-      @current_user ||= User.find_by(user_id: session[:current_user_id]) if session[:current_user_id]
+      @current_user ||= User.find_by(id: session[:current_user_id]) if session[:current_user_id]
     end
     # Only allow a list of trusted parameters through.
     def user_params

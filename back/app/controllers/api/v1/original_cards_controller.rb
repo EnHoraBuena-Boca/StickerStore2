@@ -21,7 +21,7 @@ class Api::V1::OriginalCardsController < ApplicationController
   def approved
     for i in params[:ids] 
       unapproved_card = OriginalCard.find_by(id: i)
-      result = Cloudinary::Api.update("Stickers/Unapproved/"+unapproved_card.api_id,asset_folder: "Stickers/"+unapproved_card.Cardtype)
+      result = Cloudinary::Api.update("Stickers/Unapproved/"+unapproved_card.api_id,asset_folder: "Stickers/"+unapproved_card.cardtype)
       if result
         unapproved_card.update_attribute(:approved, true)
         render json: unapproved_card, status: :ok
@@ -34,16 +34,16 @@ class Api::V1::OriginalCardsController < ApplicationController
 
   # POST /original_cards
   def create
-    user = User.find_by(user_id: session[:current_user_id])
+    user = User.find_by(id: session[:current_user_id])
 
     if user.card_approver?
-      result = Cloudinary::Uploader.upload(params[:image], folder: "Stickers/"+params[:Cardtype])
-      result['public_id'].slice! "Stickers/Unapproved/"
-      @original_card = OriginalCard.new(name: params[:name], Cardtype: params[:Cardtype], approved: true, api_id: result['public_id'])
+      result = Cloudinary::Uploader.upload(params[:image], folder: "Stickers/"+params[:cardtype])
+      result['public_id'].slice! "Stickers/"+params[:cardtype]+"/"
+      @original_card = OriginalCard.new(name: params[:name], cardtype: params[:cardtype], approved: true, api_id: result['public_id'])
     else 
       result = Cloudinary::Uploader.upload(params[:image], folder: "Stickers/Unapproved")
       result['public_id'].slice! "Stickers/Unapproved/"
-      @original_card = OriginalCard.new(name: params[:name], Cardtype: params[:Cardtype], approved: false, api_id: result['public_id'])
+      @original_card = OriginalCard.new(name: params[:name], cardtype: params[:cardtype], approved: false, api_id: result['public_id'])
     end
 
     if @original_card.save
