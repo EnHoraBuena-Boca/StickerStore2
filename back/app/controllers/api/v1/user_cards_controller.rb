@@ -53,14 +53,29 @@ class Api::V1::UserCardsController < ApplicationController
     unless user
       return render json: { error: "You must be logged in" }, status: :unauthorized
     end
+    pack.each do |card|
+      card_public_ids.append("#{card.season}/#{card.cardtype}/#{card.api_id}")
+    end
+    
+    render json: card_public_ids
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.error("UserCard validation failed:")
+    Rails.logger.error(e.record.errors.full_messages)
+    render json: { errors: e.record.errors.full_messages }, status: :unprocessable_content
+  end
+
+  
+  def commit_to_users_folder
+    user = User.find_by(id: session[:current_user_id])
     UserCard.transaction do
-      pack.each do |card|
-        @new_card = UserCard.create(user: user, season: 23, cardtype: card.cardtype, api_id: card.api_id, card_name: card.name )
+      params[:ids].each do |id|
+        id_elements = get_card_args(id)
+        card = OriginalCard.find_by(api_id: id_elements[2])
+        @new_card = UserCard.create(user: user, season: card.season, cardtype: card.cardtype, api_id: card.api_id, card_name: card.name )
         @new_card.save!
-        card_public_ids.append("Stickers/"+card.cardtype+"/"+card.api_id)
       end
     end
-    render json: card_public_ids
+    render status: :ok
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error("UserCard validation failed:")
     Rails.logger.error(e.record.errors.full_messages)
@@ -102,5 +117,10 @@ class Api::V1::UserCardsController < ApplicationController
     # Only allow a list of trusted parameters through.
     def user_card_params
       params.fetch(:user_card, {})
+    end
+
+    def get_card_args(id)
+      elements = id.split('/')
+      return elements
     end
 end

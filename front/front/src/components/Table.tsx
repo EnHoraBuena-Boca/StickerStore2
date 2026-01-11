@@ -6,6 +6,7 @@ import Button from "@mui/material/Button";
 import { ApproveCards, DeleteCards } from "./CardApi.ts";
 import Alert from "@mui/material/Alert";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { useGlobalContext } from "../utils/ContextProvider";
 
 import * as React from "react";
 
@@ -37,6 +38,7 @@ export default function DataTable({ rows }: TableProps) {
 
   const [error, setError] = React.useState(false);
   const [allRowIds, setAllRowIds] = React.useState<number[]>([]);
+  const { user } = useGlobalContext();
 
   const darkTheme = createTheme({ palette: { mode: "dark" } });
   const handleApprove = () => {
@@ -85,6 +87,7 @@ export default function DataTable({ rows }: TableProps) {
       setDestroy(true);
     } else {
       setSubmit(false);
+      setDestroy(false);
     }
   };
 
@@ -101,12 +104,12 @@ export default function DataTable({ rows }: TableProps) {
           rowSelectionModel={rowSelectionModel}
           sx={{ border: 0 }}
         />
-        {submit && (
+        {submit && user != "moderator" && (
           <Button variant="contained" onClick={handleApprove}>
             Submit for Approval
           </Button>
         )}
-        {destroy && (
+        {destroy && user != "moderator" && (
           <Button variant="contained" onClick={handleDestroy}>
             Submit to Destroy
           </Button>

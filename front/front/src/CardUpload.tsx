@@ -145,7 +145,7 @@ export default function BasicTextFields() {
           Upload
         </Button>
         <Table rows={rows} />
-        {success && <Alert severity="success">Success!.</Alert>}
+        {success && <Alert severity="success">Success!</Alert>}
         {semisuccess && (
           <Alert severity="warning">Success but needs approval.</Alert>
         )}

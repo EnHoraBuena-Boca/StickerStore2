@@ -7,16 +7,19 @@ Rails.application.routes.draw do
     namespace :v1 do
         post 'login', to: 'users#login'
         get 'me', to: 'users#me'
+        post "logout", to: "users#logout"
         get 'unapproved', to: 'original_cards#unapproved'
         post 'approved', to: 'original_cards#approved'
         post 'delete_cards', to: 'original_cards#delete_cards'
         get 'pack', to: 'user_cards#pack'
         get 'get_user_card_count', to: 'user_cards#get_user_card_count'
         post 'cards_with_params', to: 'user_cards#cards_with_params'
-
+        post 'commit_to_users_folder', to: 'user_cards#commit_to_users_folder'
         resources :users, :original_cards, :user_cards
     end
-  end 
+  end
+
+  
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

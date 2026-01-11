@@ -37,12 +37,16 @@ class Api::V1::UsersController < ApplicationController
 
   def me
     if current_user
-      render json: { user_id: current_user.id, status: current_user.status }
+      render json: { status: current_user.status }
     else
       render json: { user: nil }, status: :unauthorized
     end
   end
 
+  def logout
+    reset_session
+    head :no_content
+  end
 
   # PATCH/PUT /users/1
   def update
