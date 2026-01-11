@@ -23,7 +23,6 @@ export async function getUser(username: any, password: any) {
 
 export async function WhoAmI() {
   const url = "http://localhost:3000/api/v1/me";
-  try {
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -31,13 +30,20 @@ export async function WhoAmI() {
       },
       credentials: "include",
     });
-    if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
+    if (response.status === 401){
+      return false;
     }
     const result = await response.json();
     return result;
-  } catch (error) {
-    console.log("error, go fuck yourself", error);
-  }
+}
+
+export async function LogOut() {
+  const url = "http://localhost:3000/api/v1/logout";
+  const response = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+  });
+  
+  return response;
 }
 

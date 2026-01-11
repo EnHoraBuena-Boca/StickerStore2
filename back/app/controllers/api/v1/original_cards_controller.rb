@@ -23,6 +23,7 @@ class Api::V1::OriginalCardsController < ApplicationController
     for i in params[:ids] 
       unapproved_card = OriginalCard.find_by(id: i)
       result = Cloudinary::Api.update("#{unapproved_card.season}/Unapproved/#{unapproved_card.api_id}",asset_folder: "#{unapproved_card.season}/#{unapproved_card.cardtype}/")
+      Cloudinary::Uploader.rename("#{unapproved_card.season}/Unapproved/#{unapproved_card.api_id}", "#{unapproved_card.season}/#{unapproved_card.cardtype}/#{unapproved_card.api_id}")
       if result
         unapproved_card.update_attribute(:approved, true)
         api_results.append(result)
@@ -121,11 +122,13 @@ class Api::V1::OriginalCardsController < ApplicationController
       user = User.find_by(id: session[:current_user_id])
       if user.card_approver?
         result = Cloudinary::Uploader.upload(file, folder: file_args[2]+"/"+file_args[1].capitalize)
-        result['public_id'].slice! file_args[2]+"/"+file_args[1]+"/"
+        result['public_id'].slice! "#{file_args[2]}/#{file_args[1].capitalize}/"
+        puts result['public_id']
         original_card = OriginalCard.new(name: file_args[0], cardtype: file_args[1].capitalize, approved: true, api_id: result['public_id'], season:file_args[2])
       else 
         result = Cloudinary::Uploader.upload(file, folder: file_args[2]+"/Unapproved")
-        result['public_id'].slice! file_args[2]+"/Unapproved/"
+        result['public_id'].slice! "#{file_args[2]}/Unapproved/"
+        puts result['public_id']
         original_card = OriginalCard.new(name: file_args[0], cardtype: file_args[1].capitalize, approved: false, api_id: result['public_id'], season:file_args[2])
       end
       

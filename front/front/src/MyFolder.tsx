@@ -1,7 +1,6 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
-import BottomNavigation from "@mui/material/BottomNavigation";
 import TextField from "@mui/material/TextField";
 import Paper from "@mui/material/Paper";
 import List from "@mui/material/List";
@@ -25,6 +24,7 @@ interface Cards {
   card_name: string;
   api_id: string;
   cardtype: string;
+  season: number;
 }
 const style = {
   display: "grid",
@@ -85,7 +85,6 @@ export default function FixedBottomNavigation() {
   }
   async function getCardCount() {
     const result = await getUserCardCount();
-    console.log(result);
     setcardCount(result);
   }
   React.useEffect(() => {
@@ -133,10 +132,10 @@ export default function FixedBottomNavigation() {
       >
         <CssBaseline />
         <List>
-          {cards.map(({ card_name, api_id, cardtype }) => (
+          {cards.map(({ card_name, api_id, cardtype, season }) => (
             <ListItemButton
               onClick={() => {
-                setLink(`Stickers/${cardtype}/${api_id}`);
+                setLink(`${season}/${cardtype}/${api_id}`);
                 setcardName(card_name);
                 handleOpen();
               }}
@@ -148,7 +147,7 @@ export default function FixedBottomNavigation() {
             >
               <ListItemAvatar>
                 <AdvancedImage
-                  cldImg={cld.image(`Stickers/${cardtype}/${api_id}`)}
+                  cldImg={cld.image(`${season}/${cardtype}/${api_id}`)}
                   height="150px"
                   plugins={[lazyload(), placeholder()]}
                 />
@@ -212,7 +211,13 @@ export default function FixedBottomNavigation() {
             <Button variant="contained" type="submit" sx={{ height: "25px" }}>
               Search
             </Button>
-            <Button variant="contained" sx={{ height: "25px" }} onClick={() => {window.location.reload()}}>
+            <Button
+              variant="contained"
+              sx={{ height: "25px" }}
+              onClick={() => {
+                window.location.reload();
+              }}
+            >
               Reset
             </Button>
           </Box>

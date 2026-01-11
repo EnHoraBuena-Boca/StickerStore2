@@ -3,23 +3,25 @@ import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import PersonAdd from "@mui/icons-material/PersonAdd";
 import SignUp from "./components/SignUp.tsx";
 import { Link } from "react-router-dom";
-
+import { useGlobalContext } from "./utils/ContextProvider";
+import { LogOut } from "./components/UserApi.ts";
 export default function AccountMenu() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
   const open = Boolean(anchorEl);
+
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
+
   const handleClose = () => {
     setAnchorEl(null);
   };
+  const { user, auth } = useGlobalContext();
 
   const [SignUpopen, setOpen] = React.useState(false);
 
@@ -30,6 +32,13 @@ export default function AccountMenu() {
   const SignUphandleClose = () => {
     setOpen(false);
   };
+
+  const handleLogOut = () => {
+    LogOut().then(() => {
+      window.location.reload();
+    });
+  };
+
   return (
     <React.Fragment>
       <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
@@ -82,27 +91,32 @@ export default function AccountMenu() {
         transformOrigin={{ horizontal: "right", vertical: "top" }}
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
-        <MenuItem onClick={handleClose}>
-          <Avatar /> Profile
-        </MenuItem>
-        <Divider />
-        <MenuItem component={Link} to="/PackPage" onClick={handleClose}>
-          Packs
-        </MenuItem>
-        <MenuItem component={Link} to="/MyFolder" onClick={handleClose}>
-          MyFolder
-        </MenuItem>
-        <MenuItem component={Link} to="/CardUpload" onClick={handleClose}>
-          Card Upload
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            SingUphandleClickOpen();
-            handleClose();
-          }}
-        >
-          Log In
-        </MenuItem>
+        {auth && (
+          <MenuItem component={Link} to="/PackPage" onClick={handleClose}>
+            Packs
+          </MenuItem>
+        )}
+        {auth && (
+          <MenuItem component={Link} to="/MyFolder" onClick={handleClose}>
+            MyFolder
+          </MenuItem>
+        )}
+        {auth && user != "normal" && (
+          <MenuItem component={Link} to="/CardUpload" onClick={handleClose}>
+            Card Upload
+          </MenuItem>
+        )}
+        {!auth && (
+          <MenuItem
+            onClick={() => {
+              SingUphandleClickOpen();
+              handleClose();
+            }}
+          >
+            Log In
+          </MenuItem>
+        )}
+        {auth && <MenuItem onClick={handleLogOut}>Log Out</MenuItem>}
       </Menu>
       <SignUp open={SignUpopen} onClose={SignUphandleClose} />
     </React.Fragment>
