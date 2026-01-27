@@ -19,6 +19,7 @@ export async function createCard(raw: FormData) {
     return result;
   } catch (error) {
     console.log("error, go fuck yourself", error);
+    throw error;
   }
 }
 
@@ -39,6 +40,7 @@ export async function UnapprovedCards() {
     return result;
   } catch (error) {
     console.log("error, go fuck yourself", error);
+    throw error;
   }
 }
 
@@ -59,6 +61,7 @@ export async function ApproveCards(ids: Set<GridRowId> | number[]) {
     return result;
   } catch (error) {
     console.log("error, go fuck yourself", error);
+    throw error;
   }
 }
 
@@ -78,5 +81,6 @@ export async function DeleteCards(ids: Set<GridRowId> | number[]) {
     return response.status;
   } catch (error) {
     console.log("error, go fuck yourself", error);
+    throw error;
   }
 }

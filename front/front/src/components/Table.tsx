@@ -3,7 +3,7 @@ import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import type { GridColDef } from "@mui/x-data-grid";
 import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
-import { ApproveCards, DeleteCards } from "./CardApi.ts";
+import { ApproveCards, DeleteCards } from "../api/CardApi.ts";
 import Alert from "@mui/material/Alert";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useGlobalContext } from "../utils/ContextProvider";

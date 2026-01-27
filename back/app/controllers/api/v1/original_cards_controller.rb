@@ -50,7 +50,6 @@ class Api::V1::OriginalCardsController < ApplicationController
 
   # POST /original_cards
   def create
-    # user = User.find_by(id: session[:current_user_id])
     r = scan_zip(params[:zip])
 
     if r == false
@@ -120,22 +119,22 @@ class Api::V1::OriginalCardsController < ApplicationController
 
     def create_original_card(file, file_args)
       user = User.find_by(id: session[:current_user_id])
-      if user.card_approver?
-        result = Cloudinary::Uploader.upload(file, folder: file_args[2]+"/"+file_args[1].capitalize)
-        result['public_id'].slice! "#{file_args[2]}/#{file_args[1].capitalize}/"
-        puts result['public_id']
-        original_card = OriginalCard.new(name: file_args[0], cardtype: file_args[1].capitalize, approved: true, api_id: result['public_id'], season:file_args[2])
-      else 
-        result = Cloudinary::Uploader.upload(file, folder: file_args[2]+"/Unapproved")
-        result['public_id'].slice! "#{file_args[2]}/Unapproved/"
-        puts result['public_id']
-        original_card = OriginalCard.new(name: file_args[0], cardtype: file_args[1].capitalize, approved: false, api_id: result['public_id'], season:file_args[2])
-      end
-      
-      if original_card.save
-        return original_card
-      else
-        return false
+      OriginalCard.transaction do
+        if user.status == "card_approver"
+          result = Cloudinary::Uploader.upload(file, folder: file_args[2]+"/"+file_args[1].capitalize)
+          result['public_id'].slice! "#{file_args[2]}/#{file_args[1].capitalize}/"
+          original_card = OriginalCard.new(name: file_args[0], cardtype: file_args[1].capitalize, approved: true, api_id: result['public_id'], season:file_args[2])
+        else 
+          result = Cloudinary::Uploader.upload(file, folder: file_args[2]+"/Unapproved")
+          result['public_id'].slice! "#{file_args[2]}/Unapproved/"
+          original_card = OriginalCard.new(name: file_args[0], cardtype: file_args[1].capitalize, approved: false, api_id: result['public_id'], season:file_args[2])
+        end
+        
+        if original_card.save
+          return original_card
+        else
+          return false
+        end
       end
     end
 end

@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  resources :trade_items
+  resources :trades
   resources :user_cards
   resources :original_cards
   resources :users
@@ -8,6 +10,7 @@ Rails.application.routes.draw do
         post 'login', to: 'users#login'
         get 'me', to: 'users#me'
         post "logout", to: "users#logout"
+        get 'users_but_me', to: 'users#users_but_me'
         get 'unapproved', to: 'original_cards#unapproved'
         post 'approved', to: 'original_cards#approved'
         post 'delete_cards', to: 'original_cards#delete_cards'
@@ -15,7 +18,9 @@ Rails.application.routes.draw do
         get 'get_user_card_count', to: 'user_cards#get_user_card_count'
         post 'cards_with_params', to: 'user_cards#cards_with_params'
         post 'commit_to_users_folder', to: 'user_cards#commit_to_users_folder'
-        resources :users, :original_cards, :user_cards
+        post 'cards_by_rarity', to: 'user_cards#cards_by_rarity'
+        post 'factory_pack', to: 'user_cards#factory_pack'
+        resources :users, :original_cards, :user_cards, :trades
     end
   end
 

@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Menu from "./Menu.tsx";
 import CardUpload from "./CardUpload.tsx";
 import PackPage from "./PackPage.tsx";
 import MyFolder from "./MyFolder.tsx";
-
+import Trading from "./Trading.tsx";
+import Factory from "./FactoryPage.tsx"
 import Home from "./Home.tsx";
 import { Routes, Route } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -27,6 +28,8 @@ function App() {
           </Route>
           <Route path="/PackPage" element={<PackPage />} />
           <Route path="/MyFolder" element={<MyFolder />} />
+          <Route path="/Trading" element={<Trading />} />
+          <Route path="/Factory" element={<Factory />} />
         </Route>
 
         <Route path="/" element={<Home />} />

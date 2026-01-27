@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { WhoAmI } from "../components/UserApi.ts";
+import { WhoAmI } from "../api/UserApi.ts";
 import { useContext } from "react";
 import { createContext } from "react";
 

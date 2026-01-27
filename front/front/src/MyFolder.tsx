@@ -7,7 +7,7 @@ import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
-import { UserCards, UserCardCount, CardsWithParams } from "./components/UserCardApi.ts";
+import { UserCards, UserCardCount, CardsWithParams } from "./api/UserCardApi.ts";
 import { cld } from "./lib/cloudinary.ts";
 import { AdvancedImage, placeholder, lazyload } from "@cloudinary/react";
 import Modal from "@mui/material/Modal";
@@ -52,7 +52,7 @@ async function getUserCardCount(): Promise<number> {
   return result;
 }
 export default function FixedBottomNavigation() {
-  const [value, setValue] = React.useState(0);
+  const [value, _] = React.useState(0);
   const [cardCount, setcardCount] = React.useState(0);
   const [link, setLink] = React.useState<string | undefined>(undefined);
   const [cardName, setcardName] = React.useState<string | undefined>(undefined);
@@ -87,6 +87,7 @@ export default function FixedBottomNavigation() {
     const result = await getUserCardCount();
     setcardCount(result);
   }
+  
   React.useEffect(() => {
     getCardCount();
     loadCards();
@@ -97,13 +98,14 @@ export default function FixedBottomNavigation() {
   }, [page, rowsPerPage]);
 
   const cardTypeColor: Record<string, string> = {
-    Common: "blue",
-    Uncommon: "green",
-    Rare: "purple",
+    Bronze: "#A97142",
+    Silver: "silver",
+    Gold: "gold",
+    Diamond: "#b9f2ff",
   };
 
   const handleChangePage = (
-    event: React.MouseEvent<HTMLButtonElement> | null, // Keep or it breaks the code, idk why
+    _: React.MouseEvent<HTMLButtonElement> | null, // Keep or it breaks the code, idk why
     newPage: number
   ) => {
     setPage(newPage);
@@ -195,9 +197,10 @@ export default function FixedBottomNavigation() {
                 onChange={handleChange}
                 sx={{ width: "100px" }}
               >
-                <MenuItem value={"Common"}>Common</MenuItem>
-                <MenuItem value={"Uncommon"}>Uncommon</MenuItem>
-                <MenuItem value={"Rare"}>Rare</MenuItem>
+                <MenuItem value={"Bronze"}>Bronze</MenuItem>
+                <MenuItem value={"Silver"}>Silver</MenuItem>
+                <MenuItem value={"Gold"}>Gold</MenuItem>
+                <MenuItem value={"Gold"}>Diamond</MenuItem>
               </Select>
             </FormControl>
             <TextField

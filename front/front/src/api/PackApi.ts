@@ -15,10 +15,11 @@ export async function PackCards() {
     return result;
   } catch (error) {
     console.log("error, go fuck yourself", error);
+    throw error;
   }
 }
 
-export async function CommitCards(id1s: string[]) {
+export async function CommitCards(ids: string[]) {
   const url = "http://localhost:3000/api/v1/commit_to_users_folder";
 
   try {
@@ -34,5 +35,6 @@ export async function CommitCards(id1s: string[]) {
     return response.status;
   } catch (error) {
     console.log("error, go fuck yourself", error);
+    throw error;
   }
 }

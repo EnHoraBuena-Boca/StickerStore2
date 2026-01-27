@@ -8,7 +8,7 @@ import Tooltip from "@mui/material/Tooltip";
 import SignUp from "./components/SignUp.tsx";
 import { Link } from "react-router-dom";
 import { useGlobalContext } from "./utils/ContextProvider";
-import { LogOut } from "./components/UserApi.ts";
+import { LogOut } from "./api/UserApi.ts";
 export default function AccountMenu() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
@@ -99,6 +99,17 @@ export default function AccountMenu() {
         {auth && (
           <MenuItem component={Link} to="/MyFolder" onClick={handleClose}>
             MyFolder
+          </MenuItem>
+        )}
+
+        {auth && (
+          <MenuItem component={Link} to="/Trading" onClick={handleClose}>
+            Trading
+          </MenuItem>
+        )}
+        {auth && (
+          <MenuItem component={Link} to="/Factory" onClick={handleClose}>
+            Factory
           </MenuItem>
         )}
         {auth && user != "normal" && (

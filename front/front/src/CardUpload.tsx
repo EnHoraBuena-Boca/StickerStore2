@@ -5,15 +5,15 @@ import Alert from "@mui/material/Alert";
 
 import * as React from "react";
 import Table from "./components/Table.tsx";
-import { createCard } from "./components/CardApi.ts";
-import { UnapprovedCards } from "./components/CardApi.ts";
+import { createCard } from "./api/CardApi.ts";
+import { UnapprovedCards } from "./api/CardApi.ts";
 
 const Div = styled("div")(({ theme }) => ({
   ...theme.typography.button,
   backgroundColor: (theme.vars || theme).palette.background.paper,
   padding: theme.spacing(1),
   textTransform: "lowercase",
-  textAlign: "center"
+  textAlign: "center",
 }));
 
 const VisuallyHiddenInput = styled("input")({
@@ -89,7 +89,7 @@ export default function BasicTextFields() {
 
     const timer = setTimeout(() => {
       setSuccess(false);
-    }, 1500);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [success]);
@@ -99,7 +99,7 @@ export default function BasicTextFields() {
 
     const timer = setTimeout(() => {
       setsemiSuccess(false);
-    }, 1500);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [semisuccess]);
@@ -126,7 +126,9 @@ export default function BasicTextFields() {
           width: "100vw",
         }}
       >
-        <Div>{"Submit a zip file, all images must be first_last-type-season.png"}</Div>
+        <Div>
+          {"Submit a zip file, all images must be first_last-type-season.png"}
+        </Div>
         <Button
           component="label"
           role={undefined}

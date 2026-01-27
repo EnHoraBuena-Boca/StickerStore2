@@ -17,11 +17,9 @@ class Api::V1::UserCardsController < ApplicationController
   def get_user_card_count 
     user_cards = UserCard.where(user_id: session[:current_user_id]).count
     render json: user_cards
-
   end
 
   def cards_with_params
-    puts default_per_page
     if params[:cardtype].empty?
       @user_cards = UserCard.where(
         "user_id = ? AND card_name LIKE ?", 
@@ -45,6 +43,21 @@ class Api::V1::UserCardsController < ApplicationController
     end
   end
 
+  def cards_by_rarity
+    if params[:name] == "undefined"
+      @user_cards = UserCard.where(user_id: session[:current_user_id], cardtype: params[:cardtype])
+        .where(created_at: UserCard.where(user_id: session[:current_user_id], cardtype: params[:cardtype]).group(:card_name).select("MAX(created_at)")).pluck(:card_name, :season, :api_id, :uuid, :cardtype)
+
+    else
+      user = User.find_by(first_name: params[:name])
+      @user_cards = UserCard.where(user_id: user, cardtype: params[:cardtype])
+        .where(created_at: UserCard.where(user_id: user, cardtype: params[:cardtype]).group(:card_name).select("MAX(created_at)")).pluck(:card_name, :season, :api_id, :uuid, :cardtype)
+
+    end
+      
+    render json: @user_cards
+  end
+
 
   def pack
     user = User.find_by(id: session[:current_user_id])
@@ -62,6 +75,57 @@ class Api::V1::UserCardsController < ApplicationController
     Rails.logger.error("UserCard validation failed:")
     Rails.logger.error(e.record.errors.full_messages)
     render json: { errors: e.record.errors.full_messages }, status: :unprocessable_content
+  end
+
+  def factory_pack
+    @cards =[]
+    case params[:rarity]
+    when "Bronze"
+      cards = UserCard.where(uuid: params[:cards])
+      if cards.size == 2 && cards.all? { |card| card.cardtype == "Bronze" }
+        @new_card = get_random_card(0)
+      end
+      cards.delete_all
+    when "Silver"
+      cards = UserCard.where(uuid: params[:cards])
+      if cards.size == 3 && cards.all? { |card| card.cardtype == "Bronze" }
+        @new_card = get_random_card(1)
+      end
+      if cards.size == 2 && cards.all? { |card| card.cardtype == "Silver" }
+        @new_card = get_random_card(1)
+      end
+      cards.delete_all
+
+    when "Gold"
+      cards = UserCard.where(uuid: params[:cards])
+      if cards.size == 3 && cards.all? { |card| card.cardtype == "Silver" }
+        @new_card = get_random_card(1)
+      end
+      if cards.size == 2 && cards.all? { |card| card.cardtype == "Gold" }
+        @new_card = get_random_card(1)
+      end
+      cards.delete_all
+
+    when "Diamond"
+      cards = UserCard.where(uuid: params[:cards])
+      if cards.size == 3 && cards.all? { |card| card.cardtype == "Gold" }
+        @new_card = get_random_card(1)
+      end
+      if cards.size == 2 && cards.all? { |card| card.cardtype == "Diamond" }
+        @new_card = get_random_card(1)
+      end
+      cards.delete_all
+
+    end
+    UserCard.transaction do
+      user = User.find_by(id: session[:current_user_id])
+      @card = UserCard.create(user: user, season: @new_card.season, cardtype: @new_card.cardtype, api_id: @new_card.api_id, card_name: @new_card.name)
+    end
+    if @card.valid?
+      render json: @new_card
+    else
+      render status: :unauthorized
+    end
   end
 
   
@@ -122,5 +186,10 @@ class Api::V1::UserCardsController < ApplicationController
     def get_card_args(id)
       elements = id.split('/')
       return elements
+    end
+
+    def get_random_card(cardtype)
+      random = OriginalCard.find(OriginalCard.where(cardtype: cardtype).pluck(:id).sample)
+      return random
     end
 end

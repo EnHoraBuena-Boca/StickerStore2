@@ -3,7 +3,7 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import { cld } from "./lib/cloudinary.ts";
 import Box from "@mui/material/Box";
-import { PackCards, CommitCards } from "./components/PackApi.ts";
+import { PackCards, CommitCards } from "./api/PackApi.ts";
 import * as React from "react";
 import Alert from "@mui/material/Alert";
 

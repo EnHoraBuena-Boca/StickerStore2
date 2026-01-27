@@ -3,7 +3,13 @@ class Api::V1::UsersController < ApplicationController
 
   # GET /users
   def index
-    @users = User.all
+    @users = User.pluck(:first_name)
+
+    render json: @users
+  end
+
+  def users_but_me
+    @users = User.where.not(id: session[:current_user_id]).pluck(:first_name)
 
     render json: @users
   end
@@ -36,6 +42,7 @@ class Api::V1::UsersController < ApplicationController
   end
 
   def me
+    puts session[:current_user_id]
     if current_user
       render json: { status: current_user.status }
     else
