@@ -28,22 +28,17 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 
 # Install Yarn without apt-key
 # Install Node.js 20 and Yarn safely
+# Install Node.js 20 and Yarn safely from Debian repos
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends \
         curl \
-        gnupg \
-        gpg-agent \
-        dirmngr \
+        gnupg2 \
         ca-certificates \
-        lsb-release && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    curl -fsSL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor -o /usr/share/keyrings/yarn-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/yarn-archive-keyring.gpg] https://dl.yarnpkg.com/debian/ stable main" \
-        | tee /etc/apt/sources.list.d/yarn.list && \
-    apt-get update -qq && apt-get install -y yarn && \
+        lsb-release \
+        nodejs \
+        yarn \
+        default-mysql-client && \
     rm -rf /var/lib/apt/lists/*
-
 
 # Build stage
 FROM base AS build
