@@ -1,73 +1,68 @@
-# syntax=docker/dockerfile:1
+FROM ruby:3.4.7-slim AS base
 
-ARG RUBY_VERSION=3.4.7
-FROM ruby:$RUBY_VERSION-slim AS base
-
-# Rails app location
 WORKDIR /rails
 
 # Install runtime dependencies
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
-      curl libjemalloc2 libvips sqlite3 && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+      curl \
+      libjemalloc2 \
+      libvips \
+      sqlite3 \
+      default-mysql-client \
+      nodejs \
+      yarn \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-# Set environment variables
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development:test" \
-    LANG=C.UTF-8 \
-    TZ=UTC
+    BUNDLE_WITHOUT="development:test"
 
-# -------------------------
-# Build stage (to reduce final image size)
-# -------------------------
+# Build stage
 FROM base AS build
 
 # Install build dependencies for gems
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
-      build-essential git libyaml-dev pkg-config && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
-
-# Copy Gemfiles first for caching
-COPY Gemfile Gemfile.lock ./
+      build-essential \
+      git \
+      libyaml-dev \
+      pkg-config \
+      default-libmysqlclient-dev \
+      libssl-dev \
+      zlib1g-dev \
+      liblzma-dev \
+      libxml2-dev \
+      libxslt1-dev \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Install gems
-RUN bundle install --jobs 4 --retry 3
-
-# Remove leftover git directories to shrink image
-RUN find /usr/local/bundle/ruby -name ".git" -type d -exec rm -rf {} +
+COPY Gemfile Gemfile.lock ./
+RUN gem install bundler -v 2.6.16 && \
+    bundle install --jobs 4 --retry 3
 
 # Copy app code
 COPY . .
 
-# Precompile bootsnap (safe)
+# Precompile bootsnap for faster boot
 RUN mkdir -p tmp/cache && \
-    bundle exec bootsnap precompile app/ lib/ || true
+    bundle exec bootsnap precompile app/ lib/
 
-# -------------------------
-# Final production image
-# -------------------------
+# Final image
 FROM base
 
-# Copy gems from build stage
+# Copy built gems and app
 COPY --from=build /usr/local/bundle /usr/local/bundle
-
-# Copy application code
 COPY --from=build /rails /rails
 
-# Create non-root user
+# Non-root user
 RUN groupadd --system --gid 1000 rails && \
-    useradd --uid 1000 --gid 1000 --create-home --shell /bin/bash rails && \
+    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
     chown -R rails:rails db log storage tmp
+USER 1000:1000
 
-USER rails
-
-# Entrypoint for DB prep
+# Entrypoint and CMD
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
-
-# Default command
 EXPOSE 80
 CMD ["./bin/thrust", "./bin/rails", "server"]
