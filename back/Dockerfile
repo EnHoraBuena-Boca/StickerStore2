@@ -62,8 +62,7 @@ RUN apt-get update -qq && \
 
 # Install gems
 COPY Gemfile Gemfile.lock ./
-RUN gem install bundler -v 2.6.16 && \
-    bundle install --jobs 4 --retry 3
+RUN bundle install --jobs 4 --retry 3
 
 # Copy app code
 COPY . .
