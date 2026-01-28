@@ -5,7 +5,6 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 import IconButton from "@mui/material/IconButton";
-import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { cld } from "./lib/cloudinary.ts";
@@ -15,7 +14,6 @@ import { AnimatePresence, motion } from "motion/react";
 
 import { TradingCardLookup, FactoryPack } from "./api/UserCardApi.ts";
 import Button from "@mui/material/Button";
-import Alert from "@mui/material/Alert";
 import RequirementsTable from "./components/RequirementsTable.tsx";
 import type { SelectChangeEvent } from "@mui/material/Select";
 
