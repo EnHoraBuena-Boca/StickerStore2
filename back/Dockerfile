@@ -2,22 +2,38 @@ FROM ruby:3.4.7-slim AS base
 
 WORKDIR /rails
 
-# Install runtime dependencies
+# Install runtime dependencies for MySQL, Rails, and image processing
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
       curl \
+      gnupg \
+      ca-certificates \
       libjemalloc2 \
-      libvips \
       sqlite3 \
       default-mysql-client \
-      nodejs \
-      yarn \
-    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+      build-essential \
+      libvips-dev \
+      libssl-dev \
+      zlib1g-dev \
+      liblzma-dev \
+      libxml2-dev \
+      libxslt1-dev \
+    && rm -rf /var/lib/apt/lists/*
 
+# Install Node.js and Yarn
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
+    apt-get update && apt-get install -y yarn && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set Rails production environment variables
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development:test"
+
 
 # Build stage
 FROM base AS build
