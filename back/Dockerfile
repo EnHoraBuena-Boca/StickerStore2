@@ -1,91 +1,94 @@
-# syntax=docker/dockerfile:1
-# check=error=true
+FROM ruby:3.4.7-slim AS base
 
-# This Dockerfile is designed for production, not development.
-# docker build -t app .
-# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name app app
-
-# For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
-
-# Make sure RUBY_VERSION matches the Ruby version in .ruby-version
-ARG RUBY_VERSION=3.4.8
-FROM dhi.io/ruby:$RUBY_VERSION-dev AS base
-
-# Rails app lives here
 WORKDIR /rails
 
-# Install base packages
-# Replace libpq-dev with sqlite3 if using SQLite, or libmysqlclient-dev if using MySQL
+# Install runtime dependencies for MySQL, Rails, and image processing
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips libpq-dev && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+    apt-get install --no-install-recommends -y \
+      curl \
+      gnupg \
+      ca-certificates \
+      libjemalloc2 \
+      sqlite3 \
+      default-mysql-client \
+      build-essential \
+      libvips-dev \
+      libssl-dev \
+      zlib1g-dev \
+      liblzma-dev \
+      libxml2-dev \
+      libxslt1-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set production environment
-ENV RAILS_ENV="production" \
-    BUNDLE_DEPLOYMENT="1" \
-    BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development"
+# Install Node.js and Yarn
+# Install Node.js
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
 
-# Throw-away build stage to reduce size of final image
+# Install Yarn without apt-key
+# Install Node.js 20 and Yarn safely
+# Install Node.js 20 and Yarn safely from Debian repos
+# Install Node 20 + Yarn without apt repos
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends curl xz-utils gnupg ca-certificates default-mysql-client && \
+    rm -rf /var/lib/apt/lists/* && \
+    \
+    # Install Node 20
+    curl -fsSL https://nodejs.org/dist/v20.20.0/node-v20.20.0-linux-x64.tar.xz \
+        | tar -xJ -C /usr/local --strip-components=1 && \
+    \
+    # Install Yarn 1.x (classic)
+    curl -fsSL https://classic.yarnpkg.com/latest.tar.gz | tar -xzf - -C /opt && \
+    ln -s /opt/yarn-v1.22.21/bin/yarn /usr/local/bin/yarn
+
+# Build stage
 FROM base AS build
 
-# Install packages needed to build gems
+# Install build dependencies for gems
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential curl git pkg-config libyaml-dev && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+    apt-get install --no-install-recommends -y \
+      build-essential \
+      git \
+      libyaml-dev \
+      pkg-config \
+      default-libmysqlclient-dev \
+      libssl-dev \
+      zlib1g-dev \
+      liblzma-dev \
+      libxml2-dev \
+      libxslt1-dev \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-# Install JavaScript dependencies and Node.js for asset compilation
-#
-# Uncomment the following lines if you are using NodeJS need to compile assets
-#
-# ARG NODE_VERSION=18.12.0
-# ARG YARN_VERSION=1.22.19
-# ENV PATH=/usr/local/node/bin:$PATH
-# RUN curl -sL https://github.com/nodenv/node-build/archive/master.tar.gz | tar xz -C /tmp/ && \
-#     /tmp/node-build-master/bin/node-build "${NODE_VERSION}" /usr/local/node && \
-#     npm install -g yarn@$YARN_VERSION && \
-#     npm install -g mjml && \
-#     rm -rf /tmp/node-build-master
-
-# Install application gems
+# Install gems
 COPY Gemfile Gemfile.lock ./
-RUN bundle install && \
-    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
-    bundle exec bootsnap precompile --gemfile
 
-# Install node modules
-#
-# Uncomment the following lines if you are using NodeJS need to compile assets
-#
-# COPY package.json yarn.lock ./
-# RUN --mount=type=cache,id=yarn,target=/rails/.cache/yarn YARN_CACHE_FOLDER=/rails/.cache/yarn \
-#     yarn install --frozen-lockfile
+RUN gem install bundler
+RUN bundle install --jobs 4 --retry 3
 
-# Copy application code
+# Copy app code
 COPY . .
 
-# Precompile bootsnap code for faster boot times
-RUN bundle exec bootsnap precompile app/ lib/
+# Precompile bootsnap for faster boot
+RUN mkdir -p tmp/cache && \
+    bundle exec bootsnap precompile app/ lib/
 
-# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
-
-# Final stage for app image
+# Final image
 FROM base
 
-# Copy built artifacts: gems, application
-COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
+# Copy built gems and app
+COPY --from=build /usr/local/bundle /usr/local/bundle
 COPY --from=build /rails /rails
 
-# Run and own only the runtime files as a non-root user for security
+# Non-root user
 RUN groupadd --system --gid 1000 rails && \
     useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
-    chown -R rails:rails db log storage tmp
+    chown -R rails:rails /rails
+
 USER 1000:1000
 
-# Entrypoint prepares the database.
-ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
+# Entrypoint and CMD
 # Start the application server
 EXPOSE 3000
 CMD ["./bin/rails", "server"]
