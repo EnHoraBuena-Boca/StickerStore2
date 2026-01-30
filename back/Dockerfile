@@ -91,4 +91,4 @@ USER 1000:1000
 # Entrypoint and CMD
 # Start the application server
 ENV PORT=3000
-CMD bundle exec rails s -b 0.0.0.0 -p $PORT
+CMD bundle exec rails s -b 0.0.0.0 -p ${PORT:-3000}

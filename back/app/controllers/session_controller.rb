@@ -1,4 +1,4 @@
-class SessionsController < ApplicationController
+class SessionController < ApplicationController
   before_action :require_login, only: [:update, :destroy]
 
   def create
