@@ -91,4 +91,4 @@ USER 1000:1000
 # Entrypoint and CMD
 # Start the application server
 EXPOSE 3000
-CMD ["./bin/rails", "server"]
+CMD bundle exec rails s -b 0.0.0.0 -p $PORT
