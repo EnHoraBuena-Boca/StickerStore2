@@ -88,10 +88,11 @@ RUN groupadd --system --gid 1000 rails && \
 USER 1000:1000
 
 
-# Entrypoint and CMD
-# Start the application server
-ENV PORT=3000
-ENV RAILS_ENV=production
-ENV RACK_ENV=production
+# Copy entrypoint script
+COPY docker-entrypoint /back/bin/docker-entrypoint
+RUN chmod +x /back/bin/docker-entrypoint
 
-CMD bundle exec rails s -b 0.0.0.0 -p ${PORT:-3000}
+# Replace CMD with entrypoint
+ENTRYPOINT ["/back/bin/docker-entrypoint"]
+CMD ["bundle", "exec", "rails", "s", "-b", "0.0.0.0", "-p", "3000"]
+
