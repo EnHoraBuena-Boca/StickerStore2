@@ -98,8 +98,6 @@ export default function FactoryPage() {
   };
 
   const handleCardSelection = (index: number) => (e: SelectChangeEvent) => {
-    console.log(e.target.name);
-    console.log(cards[index].find((card) => card.card_name === e.target.value));
     e.preventDefault();
     setSelectedCardId(e.target.value);
     setImage((prev) => {

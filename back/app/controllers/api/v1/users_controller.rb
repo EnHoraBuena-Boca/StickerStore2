@@ -42,7 +42,6 @@ class Api::V1::UsersController < ApplicationController
   end
 
   def me
-    puts session[:current_user_id]
     if current_user
       render json: { status: current_user.status }
     else

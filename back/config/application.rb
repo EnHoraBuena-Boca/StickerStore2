@@ -4,8 +4,8 @@ require "rails/all"
 require "dotenv/load"
 if Rails.env.development? || Rails.env.test?
   require "dotenv/load"
+  Dotenv.load(File.expand_path("../../.env", __dir__))
 end
-
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)

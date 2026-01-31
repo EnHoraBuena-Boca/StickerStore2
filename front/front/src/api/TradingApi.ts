@@ -1,8 +1,10 @@
+import { api } from "../lib/api.ts";
+
 export async function createTrade(
   Cards: string[] = [],
   receiver: string
 ) {
-  const url = "http://localhost:3000/api/v1/trades";
+  const url = `${api}/api/v1/trades`;
 
   const combinedCards = [...Cards];
 
@@ -32,7 +34,7 @@ export async function createTrade(
 }
 
 export async function Trades() {
-  const url = "http://localhost:3000/api/v1/trades";
+  const url = `${api}/api/v1/trades`;
   const response = await fetch(url, {
     method: "GET",
     headers: {
@@ -46,7 +48,7 @@ export async function Trades() {
 }
 
 export async function GetTrade(trade_id?: number) {
-  const url = `http://localhost:3000/api/v1/trades/${trade_id}`;
+  const url = `${api}/api/v1/trades/${trade_id}`;
   const response = await fetch(url, {
     method: "GET",
     headers: {
@@ -60,7 +62,7 @@ export async function GetTrade(trade_id?: number) {
 }
 
 export async function DestroyTrade(trade_id?: number) {
-  const url = `http://localhost:3000/api/v1/trades/${trade_id}`;
+  const url = `${api}/api/v1/trades/${trade_id}`;
   const response = await fetch(url, {
     method: "DELETE",
     headers: {
@@ -76,7 +78,7 @@ export async function updateTrade(
   Cards: string[] = [],
   trade_id: number
 ) {
-  const url = `http://localhost:3000/api/v1/trades/${trade_id}`;
+  const url = `${api}/api/v1/trades/${trade_id}`;
 
   const combinedCards = [...Cards,];
 

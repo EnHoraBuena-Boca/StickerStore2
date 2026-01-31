@@ -1,5 +1,7 @@
+import { api } from "../lib/api.ts";
+
 export async function PackCards() {
-  const url = "http://localhost:3000/api/v1/pack";
+  const url = `${api}/api/v1/pack`;
   try {
     const response = await fetch(url, {
       method: "GET",
@@ -20,7 +22,7 @@ export async function PackCards() {
 }
 
 export async function CommitCards(ids: string[]) {
-  const url = "http://localhost:3000/api/v1/commit_to_users_folder";
+  const url = `${api}/api/v1/commit_to_users_folder`;
 
   try {
     const response = await fetch(url, {

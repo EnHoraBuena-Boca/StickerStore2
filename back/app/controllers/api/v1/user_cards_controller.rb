@@ -5,7 +5,6 @@ class Api::V1::UserCardsController < ApplicationController
   def index
     @user_cards = UserCard.where(user_id: session[:current_user_id])
     @user_cards = @user_cards.then(&paginate)
-
     render json: @user_cards
   end
 

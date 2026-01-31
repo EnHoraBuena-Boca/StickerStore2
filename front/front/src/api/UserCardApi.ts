@@ -1,5 +1,7 @@
+import { api } from "../lib/api.ts";
+
 export async function UserCards(page: number, per_page: number) {
-  const part1 = "http://localhost:3000/api/v1/user_cards?page=";
+  const part1 = `${api}/api/v1/user_cards?page=`;
   const part2 = "&per_page=";
   const url = `${part1}${page}${part2}${per_page}`;
   try {
@@ -21,7 +23,7 @@ export async function UserCards(page: number, per_page: number) {
 }
 
 export async function UserCardCount() {
-  const url = "http://localhost:3000/api/v1/get_user_card_count";
+  const url = `${api}/api/v1/get_user_card_count`;
   try {
     const response = await fetch(url, {
       method: "GET",
@@ -41,7 +43,7 @@ export async function UserCardCount() {
 }
 
 export async function CardsWithParams(raw: FormData) {
-  const url = "http://localhost:3000/api/v1/cards_with_params";
+  const url = `${api}/api/v1/cards_with_params`;
 
   const formData = new FormData();
   formData.append("name", raw.get("CardName") as string);
@@ -65,7 +67,7 @@ export async function CardsWithParams(raw: FormData) {
 }
 
 export async function TradingCardLookup(rarity: string, name?: string) {
-  const url = "http://localhost:3000/api/v1/cards_by_rarity";
+  const url = `${api}/api/v1/cards_by_rarity`;
 
   const formData = new FormData();
   formData.append("cardtype", rarity as string);
@@ -89,9 +91,7 @@ export async function TradingCardLookup(rarity: string, name?: string) {
 }
 
 export async function FactoryPack(cards: string[] = [], rarity: string) {
-  const url = "http://localhost:3000/api/v1/factory_pack";
-
-  
+  const url = `${api}/api/v1/factory_pack`;
 
   const TradeProps = {
     cards: cards,

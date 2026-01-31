@@ -1,7 +1,8 @@
 import type { GridRowId } from "@mui/x-data-grid";
+import {api} from  "../lib/api.ts"
 
 export async function createCard(raw: FormData) {
-  const url = "http://localhost:3000/api/v1/original_cards";
+  const url = `${api}/api/v1/original_cards`;
 
   const formData = new FormData();
   formData.append("zip", raw.get("file") as File);
@@ -24,7 +25,7 @@ export async function createCard(raw: FormData) {
 }
 
 export async function UnapprovedCards() {
-  const url = "http://localhost:3000/api/v1/unapproved";
+  const url = `${api}/api/v1/unapproved`;
   try {
     const response = await fetch(url, {
       method: "GET",
@@ -45,7 +46,7 @@ export async function UnapprovedCards() {
 }
 
 export async function ApproveCards(ids: Set<GridRowId> | number[]) {
-  const url = "http://localhost:3000/api/v1/approved";
+  const url = `${api}0/api/v1/approved`;
 
   try {
     const response = await fetch(url, {
@@ -66,7 +67,7 @@ export async function ApproveCards(ids: Set<GridRowId> | number[]) {
 }
 
 export async function DeleteCards(ids: Set<GridRowId> | number[]) {
-  const url = "http://localhost:3000/api/v1/delete_cards";
+  const url = `${api}/api/v1/delete_cards`;
 
   try {
     const response = await fetch(url, {

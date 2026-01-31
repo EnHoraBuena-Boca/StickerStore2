@@ -1,5 +1,7 @@
+import { api } from "../lib/api.ts";
+
 export async function getUser(username: any, password: any) {
-  const url = "http://localhost:3000/api/v1/login";
+  const url = `${api}/api/v1/login`;
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -21,7 +23,7 @@ export async function getUser(username: any, password: any) {
 }
 
 export async function WhoAmI() {
-  const url = "http://localhost:3000/api/v1/me";
+  const url = `${api}/api/v1/me`;
   const response = await fetch(url, {
     method: "GET",
     headers: {
@@ -37,7 +39,7 @@ export async function WhoAmI() {
 }
 
 export async function LogOut() {
-  const url = "http://localhost:3000/api/v1/logout";
+  const url = `${api}/api/v1/logout`;
   const response = await fetch(url, {
     method: "POST",
     credentials: "include",
@@ -47,7 +49,7 @@ export async function LogOut() {
 }
 
 export async function Users() {
-  const url = "http://localhost:3000/api/v1/users_but_me";
+  const url = `${api}/api/v1/users_but_me`;
   const response = await fetch(url, {
     method: "GET",
     headers: {
