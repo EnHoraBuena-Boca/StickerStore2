@@ -20,7 +20,6 @@ export default function FormDialog({ open, onClose }: SignUpProps) {
     const email = formJson.UserName;
     const pass = formJson.password;
     getUser(email, pass).then(() => {
-      window.location.reload();
     });
 
     onClose();
