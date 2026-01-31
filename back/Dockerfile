@@ -89,7 +89,7 @@ USER 1000:1000
 
 
 # Copy entrypoint script
-COPY docker-entrypoint /back/bin/docker-entrypoint
+COPY bin/docker-entrypoint /back/bin/docker-entrypoint
 RUN chmod +x /back/bin/docker-entrypoint
 
 # Replace CMD with entrypoint
