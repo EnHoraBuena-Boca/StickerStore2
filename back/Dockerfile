@@ -94,5 +94,5 @@ RUN /back/bin/docker-entrypoint
 
 # Replace CMD with entrypoint
 ENTRYPOINT ["/back/bin/docker-entrypoint"]
-CMD ["bundle", "exec", "rails", "s", "-b", "0.0.0.0", "-p", "${PORT}"]
+CMD bundle exec rails s -b 0.0.0.0 -p ${PORT:-3000}
 
