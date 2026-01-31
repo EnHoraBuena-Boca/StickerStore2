@@ -31,7 +31,12 @@ export const ContextProvider = ({ children }: any) => {
           setAuth(true);
         }
       })
-      .then(() => setLoading(false));
+      .then(() => setLoading(false))
+      .catch((err) => {
+        console.error("Unexpected error:", err);
+        setUser("");
+        setAuth(false);
+      });
   }, []);
 
   return (

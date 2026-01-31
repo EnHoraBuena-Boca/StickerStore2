@@ -19,6 +19,8 @@ export async function UserCards(page: number, per_page: number) {
     return result;
   } catch (error) {
     console.log("error, go fuck yourself", error);
+    throw error;
+
   }
 }
 
@@ -39,6 +41,8 @@ export async function UserCardCount() {
     return result;
   } catch (error) {
     console.log("error, go fuck yourself", error);
+    throw error;
+
   }
 }
 

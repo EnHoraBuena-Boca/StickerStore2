@@ -24,18 +24,22 @@ export async function getUser(username: any, password: any) {
 
 export async function WhoAmI() {
   const url = `${api}/api/v1/me`;
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-  });
-  if (response.status === 401) {
-    return false;
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+    if (response.status === 401) {
+      return false;
+    }
+    const result = await response.json();
+    return result;
+  } catch (error: unknown) {
+    throw error;
   }
-  const result = await response.json();
-  return result;
 }
 
 export async function LogOut() {
