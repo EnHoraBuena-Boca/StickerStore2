@@ -113,13 +113,16 @@ Create .env files in your respective directories based on the examples below.
 Backend (top of stickerstore directory)
 
 MYSQL_USERNAME=user
+
 MYSQL_PASSWORD=pass
+
 CLOUDINARY_ENV=key
 
 
 Frontend (/front/front/.env)
 
 VITE_API_URL=http://localhost:3000
+
 VITE_CLOUDINARY_CLOUD_NAME
 
 
