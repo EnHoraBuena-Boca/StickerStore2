@@ -1,15 +1,13 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
-import Avatar from "@mui/material/Avatar";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import SignUp from "./components/SignUp.tsx";
+import Button from "@mui/material/Button";
+
 import { Link } from "react-router-dom";
-import { useGlobalContext } from "./utils/ContextProvider";
-import { LogOut } from "./api/UserApi.ts";
-export default function AccountMenu() {
+import { useGlobalContext } from "../utils/ContextProvider.tsx";
+export default function FunMenu() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const open = Boolean(anchorEl);
@@ -23,37 +21,23 @@ export default function AccountMenu() {
   };
   const { user, auth } = useGlobalContext();
 
-  const [SignUpopen, setOpen] = React.useState(false);
-
-  const SingUphandleClickOpen = () => {
-    setOpen(true);
-  };
-
-  const SignUphandleClose = () => {
-    setOpen(false);
-  };
-
-  const handleLogOut = () => {
-    LogOut().then(() => {
-      window.location.reload();
-    });
-  };
 
   return (
     <React.Fragment>
       <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
-        <Tooltip title="Account settings">
-          <IconButton
+        {auth && (
+          <Button
             onClick={handleClick}
+            variant="text"
             size="small"
-            sx={{ ml: 2 }}
+            sx={{ height: "100%", color: "#ffffff" }}
             aria-controls={open ? "account-menu" : undefined}
             aria-haspopup="true"
             aria-expanded={open ? "true" : undefined}
           >
-            <Avatar sx={{ width: 32, height: 32 }}></Avatar>
-          </IconButton>
-        </Tooltip>
+            Trading
+          </Button>
+        )}
       </Box>
       <Menu
         anchorEl={anchorEl}
@@ -92,17 +76,6 @@ export default function AccountMenu() {
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
         {auth && (
-          <MenuItem component={Link} to="/PackPage" onClick={handleClose}>
-            Packs
-          </MenuItem>
-        )}
-        {auth && (
-          <MenuItem component={Link} to="/MyFolder" onClick={handleClose}>
-            MyFolder
-          </MenuItem>
-        )}
-
-        {auth && (
           <MenuItem component={Link} to="/Trading" onClick={handleClose}>
             Trading
           </MenuItem>
@@ -112,24 +85,7 @@ export default function AccountMenu() {
             Factory
           </MenuItem>
         )}
-        {auth && user != "normal" && (
-          <MenuItem component={Link} to="/CardUpload" onClick={handleClose}>
-            Card Upload
-          </MenuItem>
-        )}
-        {!auth && (
-          <MenuItem
-            onClick={() => {
-              SingUphandleClickOpen();
-              handleClose();
-            }}
-          >
-            Log In
-          </MenuItem>
-        )}
-        {auth && <MenuItem onClick={handleLogOut}>Log Out</MenuItem>}
       </Menu>
-      <SignUp open={SignUpopen} onClose={SignUphandleClose} />
     </React.Fragment>
   );
 }

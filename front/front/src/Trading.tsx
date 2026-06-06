@@ -44,11 +44,8 @@ export default function Trading() {
       const accepts: boolean[] = [];
       const users: string[] = [];
 
-      result.trades.forEach((trade: any, index: number) => {
-        if (trade.sender_approve && trade.receiver_approve) return;
-        if (tradeIds.includes(trade.id)) return;
-
-        tradeIds.push(trade.id);
+      result.trades.forEach((trade: number, index: number) => {
+        tradeIds.push(trade);
         accepts.push(result.current_user_accept[index]);
         users.push(result.user2_name[index]);
       });
@@ -76,7 +73,7 @@ export default function Trading() {
             alignItems: "flex-start",
             width: 1000,
             height: 500,
-            bgcolor: "background.paper",
+            bgcolor: "#333333",
             p: 3,
           }}
         >
@@ -89,7 +86,7 @@ export default function Trading() {
               width: "100%",
             }}
           >
-            <Typography variant="h4">Current Live Trades</Typography>
+            <Typography variant="h4">Your Current Live Trades</Typography>
 
             <Button
               variant="contained"
@@ -97,6 +94,7 @@ export default function Trading() {
                 setOpen(true);
                 setTradeIndex(undefined);
               }}
+              sx={{ backgroundColor: "#444444" }}
             >
               Create Trade
             </Button>

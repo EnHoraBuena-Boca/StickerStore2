@@ -122,6 +122,7 @@ class Api::V1::OriginalCardsController < ApplicationController
       OriginalCard.transaction do
         if user.status == "card_approver"
           result = Cloudinary::Uploader.upload(file, folder: file_args[2]+"/"+file_args[1].capitalize)
+          puts result
           result['public_id'].slice! "#{file_args[2]}/#{file_args[1].capitalize}/"
           original_card = OriginalCard.new(name: file_args[0], cardtype: file_args[1].capitalize, approved: true, api_id: result['public_id'], season:file_args[2])
         else 

@@ -2,7 +2,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  background-color: rgb(10, 24, 177);
+  background-color: #393e46;
 }
 
 /* header */
@@ -16,16 +16,24 @@ html, body {
   padding: 0 15px;
   justify-content: space-between; 
   align-items: center;
-  background: white;
-  border-bottom: 1px solid #ddd;
+  background: #222831;
+  border-bottom: 1px solid #bd9523;
   display: flex;
 }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px; /* space between MenuTabs and Menu */
+}
+
 
 .Title {
     font-size: 2em;
     font-weight: bold;
     margin-top: 0.67em;
     margin-bottom: 0.67em;
+    color: #ffffff
 }
 
 

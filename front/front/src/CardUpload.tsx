@@ -10,10 +10,11 @@ import { UnapprovedCards } from "./api/CardApi.ts";
 
 const Div = styled("div")(({ theme }) => ({
   ...theme.typography.button,
-  backgroundColor: (theme.vars || theme).palette.background.paper,
   padding: theme.spacing(1),
-  textTransform: "lowercase",
+  textTransform: "normal",
   textAlign: "center",
+  whiteSpace: "pre-line",
+  color: "#ffffff",
 }));
 
 const VisuallyHiddenInput = styled("input")({
@@ -127,13 +128,20 @@ export default function BasicTextFields() {
         }}
       >
         <Div>
-          {"Submit a zip file, all images must be first_last-type-season.png"}
+          {
+            "To submit new cards they must be in a .zip file.\n Each card in the .zip file must be a .png and have the format: first_last-variety-season"
+          }
         </Div>
         <Button
           component="label"
           role={undefined}
-          variant="contained"
-          sx={{ alignSelf: "center", justifySelf: "center", width: "70ch" }}
+          sx={{
+            alignSelf: "center",
+            justifySelf: "center",
+            width: "70ch",
+            color: "#444444",
+            backgroundColor: "#ffffff",
+          }}
         >
           File
           <VisuallyHiddenInput
@@ -143,7 +151,14 @@ export default function BasicTextFields() {
             accept=".zip,application/zip"
           />
         </Button>
-        <Button type="submit" sx={{ marginBottom: 10 }}>
+        <Button
+          type="submit"
+          sx={{
+            marginBottom: 10,
+            color: "#444444",
+            backgroundColor: "#ffffff",
+          }}
+        >
           Upload
         </Button>
         <Table rows={rows} />

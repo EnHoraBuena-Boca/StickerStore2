@@ -7,7 +7,11 @@ import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
-import { UserCards, UserCardCount, CardsWithParams } from "./api/UserCardApi.ts";
+import {
+  UserCards,
+  UserCardCount,
+  CardsWithParams,
+} from "./api/UserCardApi.ts";
 import { cld } from "./lib/cloudinary.ts";
 import { AdvancedImage, placeholder, lazyload } from "@cloudinary/react";
 import Modal from "@mui/material/Modal";
@@ -72,9 +76,8 @@ export default function FixedBottomNavigation() {
     CardsWithParams(raw).then((result: any) => {
       setCards(result);
       setcardCount(result.length);
-
     });
-  }
+  };
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -87,7 +90,7 @@ export default function FixedBottomNavigation() {
     const result = await getUserCardCount();
     setcardCount(result);
   }
-  
+
   React.useEffect(() => {
     getCardCount();
     loadCards();
@@ -106,13 +109,13 @@ export default function FixedBottomNavigation() {
 
   const handleChangePage = (
     _: React.MouseEvent<HTMLButtonElement> | null, // Keep or it breaks the code, idk why
-    newPage: number
+    newPage: number,
   ) => {
     setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
@@ -129,6 +132,7 @@ export default function FixedBottomNavigation() {
           flexDirection: "column",
           alignItems: "center",
           overflowY: "auto",
+          backgroundColor: "#393e46",
         }}
         ref={ref}
       >
@@ -172,7 +176,13 @@ export default function FixedBottomNavigation() {
         </List>
 
         <Paper
-          sx={{ position: "fixed", bottom: 0, left: 0, right: 0 }}
+          sx={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: " #222831",
+          }}
           elevation={3}
         >
           <Box
@@ -195,7 +205,11 @@ export default function FixedBottomNavigation() {
                 value={rarity}
                 label="Rarity"
                 onChange={handleChange}
-                sx={{ width: "100px" }}
+                sx={{
+                  width: "100px",
+                  backgroundColor: "#ffffff",
+                  borderColor: "#ffffff",
+                }}
               >
                 <MenuItem value={"Bronze"}>Bronze</MenuItem>
                 <MenuItem value={"Silver"}>Silver</MenuItem>
@@ -210,13 +224,26 @@ export default function FixedBottomNavigation() {
               name="CardName"
               label="Card Name"
               variant="filled"
+              sx={{ backgroundColor: "#ffffff", color: "#000000" }}
             />
-            <Button variant="contained" type="submit" sx={{ height: "25px" }}>
+            <Button
+              variant="contained"
+              type="submit"
+              sx={{
+                height: "25px",
+                backgroundColor: "#ffffff",
+                color: "#000000",
+              }}
+            >
               Search
             </Button>
             <Button
               variant="contained"
-              sx={{ height: "25px" }}
+              sx={{
+                height: "25px",
+                backgroundColor: "#ffffff",
+                color: "#000000",
+              }}
               onClick={() => {
                 window.location.reload();
               }}

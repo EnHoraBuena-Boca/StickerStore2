@@ -76,6 +76,7 @@ export default function TradeModal({
       setUser("");
       return;
     }
+
     GetTrade(trade_id).then((result) => {
       result.user_trade_items.map((card: CardItem, index: number) => {
         setIsVisible((prev) => prev.map((v, i) => (i === index ? true : v)));
@@ -137,10 +138,8 @@ export default function TradeModal({
 
     if (!trade_id) {
       createTrade(final, user)
-        .then((result) => {
-          if (result.sender_approve) {
-            setCanSubmit(false);
-          }
+        .then((_) => {
+          setCanSubmit(false);
           setAlert(1);
         })
         .catch((_) => {
@@ -477,7 +476,7 @@ export default function TradeModal({
             </Box>
 
             <Button type="button" onClick={handleDelete}>
-              Cancel Trade
+              Delete Trade
             </Button>
           </Box>
 

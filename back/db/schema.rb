@@ -10,7 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_16_004217) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_11_040508) do
+  create_table "availible_packs", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.integer "packs_left", default: 0
+    t.bigint "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_availible_packs_on_user_id"
+  end
+
   create_table "original_cards", id: :integer, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -29,15 +37,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_16_004217) do
     t.index ["trade_id"], name: "index_trade_items_on_trade_id"
   end
 
-  create_table "trades", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
-    t.boolean "sender_approve", default: false, null: false
-    t.boolean "receiver_approve", default: false, null: false
-    t.integer "sender_id", null: false
-    t.integer "receiver_id", null: false
+  create_table "trade_participants", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "trade_id"
+    t.bigint "user_id"
+    t.boolean "accept", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["receiver_id"], name: "fk_rails_a066f79fd8"
-    t.index ["sender_id"], name: "fk_rails_913f1d4970"
+    t.index ["trade_id"], name: "index_trade_participants_on_trade_id"
+    t.index ["user_id"], name: "index_trade_participants_on_user_id"
+  end
+
+  create_table "trades", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "user_cards", primary_key: "uuid", id: { type: :binary, limit: 16 }, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
@@ -58,6 +70,4 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_16_004217) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
-
-  add_foreign_key "trade_items", "trades", on_delete: :cascade
 end
