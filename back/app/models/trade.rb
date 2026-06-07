@@ -1,14 +1,12 @@
 class Trade < ApplicationRecord
-  belongs_to :sender, class_name: 'User'
-  belongs_to :receiver, class_name: 'User'
+  has_many :trade_participants, dependent: :destroy
+  has_many :users, through: :trade_participants
   has_many :trade_items, dependent: :destroy
 
-  scope :involving_user, ->(user_id) {
-    where(receiver: user_id).or(where(sender: user_id))
-  }
-
-  def other_user(current_user_id)
-    sender_id == current_user_id ? receiver_id : sender_id
+  def fully_accepted?
+    trade_participants.all?(&:accept)
   end
+
+
 
 end

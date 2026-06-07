@@ -1,20 +1,21 @@
 import { useEffect } from "react";
-import Menu from "./Menu.tsx";
+import Menu from "./components/Menu.tsx";
 import CardUpload from "./CardUpload.tsx";
 import PackPage from "./PackPage.tsx";
 import MyFolder from "./MyFolder.tsx";
 import Trading from "./Trading.tsx";
-import Factory from "./FactoryPage.tsx"
+import Factory from "./FactoryPage.tsx";
 import Home from "./Home.tsx";
 import { Routes, Route } from "react-router-dom";
 import { Link } from "react-router-dom";
 import PrivateRoutes from "./utils/PrivateRoute.tsx";
 import UserProtectedRoute from "./utils/UserProtectedRoute.tsx";
+import TradingMenu from "./components/TradingMenu.tsx";
+import MyCardsMenu from "./components/MyCardsMenu.tsx";
 
 import "./App.css";
 
 function App() {
-
   useEffect(() => {
     document.title = "SSL-Sticker-Store";
   }, []);
@@ -36,9 +37,13 @@ function App() {
       </Routes>
 
       <header className="site-header">
-        <Link to="/" className="Title">
-          SSL Sticker Store
-        </Link>
+        <div className="header-right">
+          <Link to="/" className="Title">
+            SSL Sticker Store
+          </Link>
+          <MyCardsMenu />
+          <TradingMenu />
+        </div>
         <Menu />
       </header>
     </>

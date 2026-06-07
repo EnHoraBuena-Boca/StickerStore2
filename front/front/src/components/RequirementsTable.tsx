@@ -31,14 +31,11 @@ export default function RequirementsTable() {
         flexDirection: "column",
         alignItems: "center",
         width: 500,
-        background: "white",
+        backgroundColor: "#393e46",
       }}
       component={Paper}
     >
-      <Table
-        size="small"
-        aria-label="a dense table"
-      >
+      <Table size="small" aria-label="a dense table">
         <TableHead>
           <TableRow>
             <TableCell>Rarity</TableCell>

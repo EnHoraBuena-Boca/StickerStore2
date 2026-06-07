@@ -3,22 +3,18 @@ class Api::V1::TradesController < ApplicationController
 
   # GET /tradings
   def index
-    @trades = Trade.involving_user(session[:current_user_id])
-    
+    @trade_participants = TradeParticipant.where(user_id: session[:current_user_id])
+    @trades = []
     @current_user_accept = []
     @user2_name = []
-    for trade in @trades
-      if (trade.sender_id == session[:current_user_id][0])
-        @user2_name << trade.receiver.first_name
-        if trade.sender_approve?
-          @current_user_accept << true
-        end
-      else
-        @user2_name << trade.sender.first_name
-        if trade.receiver_approve?
-          @current_user_accept << true
-        end
+    for tps in @trade_participants
+      trade = Trade.find(tps.trade_id)
+      if trade.fully_accepted?
+        next
       end
+      @trades << tps.trade_id
+      @user2_name << User.where(id: TradeParticipant.where(trade_id: tps.trade_id).where.not(user_id: session[:current_user_id]).pick(:user_id)).pick(:first_name)
+      @current_user_accept << tps.accept
     end
 
     render json: {trades: @trades, current_user_accept: @current_user_accept, user2_name: @user2_name }
@@ -28,28 +24,23 @@ class Api::V1::TradesController < ApplicationController
   def show
     @trade = Trade.find(params[:id])
     @trade_items = TradeItem.where(trade: @trade)
+    other_user = @trade.trade_participants.where.not(user_id: session[:current_user_id]).pick(:user_id)
+    puts other_user
     user_trade_items = Array.new
     user2_trade_items = Array.new
-
+    
     for item in @trade_items
       if item.user_card.user_id == session[:current_user_id][0]
         user_trade_items << item.user_card
-      else
+      elsif item.user_card.user_id == other_user
         user2_trade_items << item.user_card
+      else
+        item.destroy!
       end
     end
-    @current_user_accept = false
-    if (@trade.sender_id == session[:current_user_id][0])
-      @user2_name = @trade.receiver.first_name
-      if @trade.sender_approve?
-        @current_user_accept = true
-      end
-    else
-      @user2_name = @trade.sender.first_name
-      if @trade.receiver_approve?
-        @current_user_accept = true
-      end
-    end
+    @current_user_accept = TradeParticipant.where(trade: @trade).where(user_id: session[:current_user_id]).pick(:accept)
+    @user2_name = User.where(id: TradeParticipant.where(trade: @trade).where.not(user_id: session[:current_user_id]).pick(:user_id)).pick(:first_name)
+
 
     render json: { user_trade_items: user_trade_items, user2_trade_items: user2_trade_items, current_user_accept: @current_user_accept, user2_name: @user2_name}
   end
@@ -57,61 +48,78 @@ class Api::V1::TradesController < ApplicationController
 
   # POST /trades
   def create
-    receiver = User.find_by(first_name: params[:receiver])
-    sender = User.find_by(id: session[:current_user_id])
-    @trading = Trade.create(sender: sender, receiver: receiver, sender_approve: true)
-    @trading.save!
-    for uuid in params[:combinedCards]
-      card = UserCard.find_by(uuid: uuid)
-      @trade_item = TradeItem.create(user_card: card, trade: @trading)
-      @trade_item.save!
+    user_1 = User.find_by(id: session[:current_user_id])
+    user_2 = User.find_by(first_name: params[:receiver])
+
+
+    Trade.transaction do
+      @trade = Trade.create!
     end
 
-    if !@trading.nil? && !@trade_item.nil?
+    TradeParticipant.transaction do
+      @trade_participant1 = TradeParticipant.create(trade: @trade, user: user_1, accept: true)
+      @trade_participant2 = TradeParticipant.create(trade: @trade, user: user_2)
+    end
+
+    TradeItem.transaction do
+      for uuid in params[:combinedCards]
+        card = UserCard.find_by(uuid: uuid)
+        @trade_item = TradeItem.create(user_card: card, trade: @trade)
+        @trade_item.save!
+      end
+    end
+
+    if @trade.valid?
       render json: @trading, status: :created, location: @trading
     else
-      @trading.destroy!
+      @trade.destroy!
       render json: @trading.errors, status: :unprocessable_content
     end
   end
 
-
+  #TODO
   # PATCH/PUT /tradings/1
   def update
     @trade = Trade.find(params[:id])
-    diff =  params[:combinedCards] - @trade.trade_items.pluck(:user_card_id) | @trade.trade_items.pluck(:user_card_id) - params[:combinedCards]
+    diff = @trade.trade_items.pluck(:user_card_id) - params[:combinedCards] | params[:combinedCards] - @trade.trade_items.pluck(:user_card_id)
+    participant_1 =  @trade.trade_participants.first
+    participant_2 = @trade.trade_participants.second
     if diff.empty?
       UserCard.transaction do
         for card in @trade.trade_items
           @user_card = card.user_card
-          other_user =  User.find(@trade.other_user(session[:current_user_id][0]))
-          current_user = User.find(session[:current_user_id][0])
-          if @user_card.user_id == other_user.id[0]
-            @user_card.user = current_user
-          elsif @user_card.user_id == current_user.id[0]
-            @user_card.user = other_user
+          if @user_card.user_id == participant_1.user_id
+            @user_card.user = User.find(participant_2.user_id)
+          else
+            @user_card.user = User.find(participant_1.user_id)
           end
           @user_card.save!
         end
       end
-      
-      column_to_update = session[:current_user_id].first == @trade.sender_id ? :sender_approve : :receiver_approve
-      @trade.update(column_to_update => true)
-    else
-      @trade.trade_items.delete_all
-      Trade.transaction do
-        params[:combinedCards].each do |uuid|
-          card = UserCard.find_by(uuid: uuid)
-          @trade.trade_items.create!(user_card: card)
-        end
+      participant_1.update!(accept: true)
+      participant_2.update!(accept: true)
 
-        if session[:current_user_id].first == @trade.sender_id
-          @trade.update!(sender_approve: true, receiver_approve: false)
-        else
-          @trade.update!(sender_approve: false, receiver_approve: true)
+    else
+        @trade.trade_items.delete_all
+
+        # create new item_cards
+        TradeItem.transaction do
+          params[:combinedCards].each do |uuid|
+            card = UserCard.find_by(uuid: uuid)
+            @trade.trade_items.create!(user_card: card)
+          end
         end
-      end
+        
+        if session[:current_user_id].first == participant_1.user_id
+          participant_1.update!(accept: true)
+          participant_2.update!(accept: false)
+
+        else
+          participant_1.update!(accept: false)
+          participant_2.update!(accept: true)        
+        end
     end
+
     if @trade.valid?
       render json: @trade, status: :created, location: @trade
     else
@@ -119,9 +127,10 @@ class Api::V1::TradesController < ApplicationController
     end
   end
 
+  #TODO
   # DELETE /tradings/1
   def destroy
-    @trading.destroy!
+    Trade.find(params[:id]).destroy!
   end
 
   private
@@ -133,5 +142,9 @@ class Api::V1::TradesController < ApplicationController
     # Only allow a list of trusted parameters through.
     def trading_params
       params.fetch(:trading, {})
+    end
+
+    def delete_unapproved_trades_with_card(cards, trade_id)
+      
     end
 end

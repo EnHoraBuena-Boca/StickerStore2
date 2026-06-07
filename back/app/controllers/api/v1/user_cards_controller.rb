@@ -69,7 +69,7 @@ class Api::V1::UserCardsController < ApplicationController
       card_public_ids.append("#{card.season}/#{card.cardtype}/#{card.api_id}")
     end
     
-    render json: card_public_ids
+    render json: {card_public_ids: card_public_ids, pack_count: user.availible_pack}
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error("UserCard validation failed:")
     Rails.logger.error(e.record.errors.full_messages)
@@ -78,52 +78,69 @@ class Api::V1::UserCardsController < ApplicationController
 
   def factory_pack
     @cards =[]
+    correct_trade = false
+
     case params[:rarity]
     when "Bronze"
       cards = UserCard.where(uuid: params[:cards])
       if cards.size == 2 && cards.all? { |card| card.cardtype == "Bronze" }
         @new_card = get_random_card(0)
+        cards.delete_all
+        correct_trade = true
       end
-      cards.delete_all
     when "Silver"
       cards = UserCard.where(uuid: params[:cards])
       if cards.size == 3 && cards.all? { |card| card.cardtype == "Bronze" }
         @new_card = get_random_card(1)
+        cards.delete_all
+        correct_trade = true
+
       end
       if cards.size == 2 && cards.all? { |card| card.cardtype == "Silver" }
         @new_card = get_random_card(1)
-      end
-      cards.delete_all
+        cards.delete_all
+        correct_trade = true
 
+      end
     when "Gold"
       cards = UserCard.where(uuid: params[:cards])
       if cards.size == 3 && cards.all? { |card| card.cardtype == "Silver" }
         @new_card = get_random_card(1)
+        cards.delete_all
+        correct_trade = true
+
       end
       if cards.size == 2 && cards.all? { |card| card.cardtype == "Gold" }
         @new_card = get_random_card(1)
+        cards.delete_all
+        correct_trade = true
       end
-      cards.delete_all
 
     when "Diamond"
       cards = UserCard.where(uuid: params[:cards])
       if cards.size == 3 && cards.all? { |card| card.cardtype == "Gold" }
         @new_card = get_random_card(1)
+        cards.delete_all
+        correct_trade = true
       end
       if cards.size == 2 && cards.all? { |card| card.cardtype == "Diamond" }
         @new_card = get_random_card(1)
-      end
-      cards.delete_all
+        cards.delete_all
+        correct_trade = true
 
+      end
     end
-    UserCard.transaction do
-      user = User.find_by(id: session[:current_user_id])
-      @card = UserCard.create(user: user, season: @new_card.season, cardtype: @new_card.cardtype, api_id: @new_card.api_id, card_name: @new_card.name)
+    if correct_trade == true
+      UserCard.transaction do
+        user = User.find_by(id: session[:current_user_id])
+        @card = UserCard.create(user: user, season: @new_card.season, cardtype: @new_card.cardtype, api_id: @new_card.api_id, card_name: @new_card.name)
+      end
     end
-    if @card.valid?
+
+    if @card && correct_trade == true
       render json: @new_card
     else
-      render status: :unauthorized
+      render status: :bad_request
     end
   end
 

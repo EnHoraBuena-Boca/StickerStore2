@@ -35,8 +35,8 @@ module Back
 
     config.session_store :cookie_store, 
       key: '_your_app_session',
-      same_site: :none,
-      secure: true
+      same_site: Rails.env.production? ? :none : :lax,
+      secure: Rails.env.production?
 
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore, config.session_options

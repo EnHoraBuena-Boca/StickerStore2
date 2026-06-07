@@ -16,6 +16,16 @@ import { TradingCardLookup, FactoryPack } from "./api/UserCardApi.ts";
 import Button from "@mui/material/Button";
 import RequirementsTable from "./components/RequirementsTable.tsx";
 import type { SelectChangeEvent } from "@mui/material/Select";
+import { styled } from "@mui/material/styles";
+
+const Div = styled("div")(({ theme }) => ({
+  ...theme.typography.button,
+  color: "#bd9523",
+  padding: theme.spacing(1),
+  textTransform: "normal",
+  textAlign: "center",
+  whiteSpace: "pre-line",
+}));
 
 type CardItem = {
   card_name: string;
@@ -44,6 +54,12 @@ const button: React.CSSProperties = {
   right: 0,
 };
 
+const cardTypeColor: Record<string, string> = {
+  Bronze: "#A97142",
+  Silver: "silver",
+  Gold: "gold",
+  Diamond: "#b9f2ff",
+};
 export default function FactoryPage() {
   const [rarity, setRarity] = React.useState("");
   const [tradeRarity, setTradeRarity] = React.useState(Array(3).fill(""));
@@ -63,7 +79,6 @@ export default function FactoryPage() {
   const [newCard, setNewCard] = React.useState<CardItem | undefined>(undefined);
   const handleChange = (event: SelectChangeEvent) => {
     setRarity(event.target.value);
-    setCanSubmit(true);
   };
 
   async function CardLookup(index: number, rarity: string) {
@@ -107,6 +122,7 @@ export default function FactoryPage() {
       );
       return next;
     });
+    setCanSubmit(true);
   };
 
   const reset = (index: number) => {
@@ -131,6 +147,8 @@ export default function FactoryPage() {
       next[index] = undefined;
       return next;
     });
+
+    setCanSubmit(false);
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -164,6 +182,11 @@ export default function FactoryPage() {
         width: "100vw",
       }}
     >
+      <Div>
+        {
+          "\n The factory page allows you to trade with the Bank.\n Following the guide below, trade in your cards to receive a new random card from the variety of your choice!"
+        }
+      </Div>
       <Box
         sx={{
           display: "flex",
@@ -177,6 +200,7 @@ export default function FactoryPage() {
           p: 3,
           mx: "auto",
           marginTop: "1%",
+          backgroundColor: "color-mix(in srgb, #070b51 55%, black)",
         }}
       >
         {!newCard ? (
@@ -190,7 +214,10 @@ export default function FactoryPage() {
                 mb: 14,
               }}
             >
-              <InputLabel id="demo-simple-select-standard-label">
+              <InputLabel
+                id="demo-simple-select-standard-label"
+                sx={{ color: "#bd9523" }}
+              >
                 Rarity
               </InputLabel>
               <Select
@@ -198,6 +225,7 @@ export default function FactoryPage() {
                 value={rarity}
                 onChange={handleChange}
                 label="Rarity"
+                sx={{ color: cardTypeColor[rarity] ?? "grey" }}
               >
                 <MenuItem value="">
                   <em>None</em>
@@ -347,8 +375,16 @@ export default function FactoryPage() {
                 gap: 2,
               }}
             >
-              <Button type="submit" disabled={!canSubmit}>
-                Submit Trade
+              <Button
+                type="submit"
+                disabled={!canSubmit}
+                sx={{
+                  color: "#bd9523",
+                  backgroundColor: "color-mix(in srgb, #070b51 95%, black)",
+                  width: "400px",
+                }}
+              >
+                Submit
               </Button>
             </Box>
           </>

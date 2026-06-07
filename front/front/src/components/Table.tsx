@@ -93,6 +93,7 @@ export default function DataTable({ rows }: TableProps) {
 
   return (
     <ThemeProvider theme={darkTheme}>
+      Unapproved Cards
       <Paper sx={{ height: 400, width: "100%" }}>
         <DataGrid
           rows={rows}
