@@ -6,8 +6,13 @@ import Alert from "@mui/material/Alert";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Paper from "@mui/material/Paper";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import HistoryIcon from "@mui/icons-material/History";
 import HourglassTopIcon from "@mui/icons-material/HourglassTop";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import TouchAppIcon from "@mui/icons-material/TouchApp";
@@ -16,11 +21,13 @@ import { Users } from "./api/UserApi";
 import { Trades } from "./api/TradingApi.ts";
 
 interface TradesResponse {
-  trades: number[];
-  current_user_accept: boolean[];
-  user2_name: string[];
-  current_user_rarities: Record<string, number>[];
-  other_user_rarities: Record<string, number>[];
+  trades?: number[];
+  current_user_accept?: boolean[];
+  user2_name?: string[];
+  current_user_rarities?: Record<string, number>[];
+  other_user_rarities?: Record<string, number>[];
+  trade_errors?: boolean[];
+  history?: TradeHistory[];
 }
 
 interface LiveTrade {
@@ -29,6 +36,18 @@ interface LiveTrade {
   waitingOnOtherUser: boolean;
   offeredRarities: Record<string, number>;
   requestedRarities: Record<string, number>;
+  hasError: boolean;
+}
+
+interface TradeHistory {
+  id: number;
+  other_user: string | null;
+  status: "accepted" | "declined";
+  offered_card_count: number;
+  offered_rarity_counts: Record<string, number>;
+  received_card_count: number;
+  received_rarity_counts: Record<string, number>;
+  completed_at: string;
 }
 
 const rarityColors: Record<string, string> = {
@@ -44,6 +63,7 @@ export default function Trading() {
   const [open, setOpen] = React.useState(false);
   const [allUsers, setAllUsers] = React.useState<string[]>([]);
   const [liveTrades, setLiveTrades] = React.useState<LiveTrade[]>([]);
+  const [tradeHistory, setTradeHistory] = React.useState<TradeHistory[]>([]);
   const [tradeIndex, setTradeIndex] = React.useState<number | undefined>();
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -66,14 +86,23 @@ export default function Trading() {
           return;
         }
 
-        setAllUsers(usersResult);
+        const tradeIds = tradesResult.trades ?? [];
+        const tradeAcceptances = tradesResult.current_user_accept ?? [];
+        const tradeUsers = tradesResult.user2_name ?? [];
+        const currentUserRarities = tradesResult.current_user_rarities ?? [];
+        const otherUserRarities = tradesResult.other_user_rarities ?? [];
+        const tradeErrors = tradesResult.trade_errors ?? [];
+
+        setAllUsers(usersResult ?? []);
+        setTradeHistory(tradesResult.history ?? []);
         setLiveTrades(
-          tradesResult.trades.map((id, index) => ({
+          tradeIds.map((id, index) => ({
             id,
-            otherUser: tradesResult.user2_name[index],
-            waitingOnOtherUser: tradesResult.current_user_accept[index],
-            offeredRarities: tradesResult.current_user_rarities[index] ?? {},
-            requestedRarities: tradesResult.other_user_rarities[index] ?? {},
+            otherUser: tradeUsers[index] ?? "Unknown user",
+            waitingOnOtherUser: tradeAcceptances[index] ?? false,
+            offeredRarities: currentUserRarities[index] ?? {},
+            requestedRarities: otherUserRarities[index] ?? {},
+            hasError: tradeErrors[index] ?? false,
           })),
         );
       } catch (error) {
@@ -132,6 +161,29 @@ export default function Trading() {
       />
     ));
   };
+
+  const historySideSummary = (
+    cardCount: number,
+    rarityCounts: Record<string, number>,
+  ) => {
+    const raritySummary = rarityOrder
+      .filter((rarity) => rarityCounts[rarity] > 0)
+      .map((rarity) => `${rarityCounts[rarity]} ${rarity}`)
+      .join(", ");
+
+    return `${cardCount} card${cardCount === 1 ? "" : "s"}${
+      raritySummary ? ` (${raritySummary})` : ""
+    }`;
+  };
+
+  const historyCardSummary = (trade: TradeHistory) =>
+    `${historySideSummary(
+      trade.offered_card_count,
+      trade.offered_rarity_counts,
+    )} for ${historySideSummary(
+      trade.received_card_count,
+      trade.received_rarity_counts,
+    )}`;
 
   return (
     <>
@@ -304,23 +356,48 @@ export default function Trading() {
                         "transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease",
                       "&:hover": {
                         transform: "translateY(-2px)",
-                        borderColor: needsAction ? "#bd9523" : "#77808f",
+                        borderColor: trade.hasError
+                          ? "#ef4444"
+                          : needsAction
+                            ? "#bd9523"
+                            : "#77808f",
                         backgroundColor: "#2b3442",
                       },
                     }}
                   >
                     <Box
                       sx={{
-                        backgroundColor: needsAction ? "#bd9523" : "#64748b",
+                        backgroundColor: trade.hasError
+                          ? "#ef4444"
+                          : needsAction
+                            ? "#bd9523"
+                            : "#64748b",
                       }}
                     />
                     <Box sx={{ p: 2, minWidth: 0 }}>
-                      <Typography
-                        variant="overline"
-                        sx={{ color: "#9ca3af", fontWeight: 800 }}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 1,
+                        }}
                       >
-                        Trade #{trade.id}
-                      </Typography>
+                        <Typography
+                          variant="overline"
+                          sx={{ color: "#9ca3af", fontWeight: 800 }}
+                        >
+                          Trade #{trade.id}
+                        </Typography>
+                        {trade.hasError && (
+                          <Chip
+                            size="small"
+                            label="Trade Error"
+                            color="error"
+                            sx={{ height: 24, fontWeight: 800 }}
+                          />
+                        )}
+                      </Box>
                       <Typography
                         variant="h6"
                         sx={{
@@ -401,6 +478,135 @@ export default function Trading() {
             </Box>
           )}
         </Box>
+
+        <Accordion
+          disableGutters
+          sx={{
+            color: "#ffffff",
+            border: "1px solid #596273",
+            borderRadius: "12px !important",
+            backgroundColor: "#222831",
+            "&::before": { display: "none" },
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon sx={{ color: "#cbd5e1" }} />}
+            aria-controls="trade-history-content"
+            id="trade-history-header"
+            sx={{
+              minHeight: 52,
+              px: 2,
+              "& .MuiAccordionSummary-content": {
+                my: 1,
+                alignItems: "center",
+                gap: 1,
+              },
+            }}
+          >
+            <HistoryIcon sx={{ color: "#bd9523" }} />
+            <Typography sx={{ fontWeight: 800 }}>Trade History</Typography>
+            <Chip
+              size="small"
+              label={tradeHistory.length}
+              sx={{
+                height: 22,
+                color: "#d1d5db",
+                backgroundColor: "#374151",
+              }}
+            />
+          </AccordionSummary>
+          <AccordionDetails id="trade-history-content" sx={{ px: 1.5, pt: 0, pb: 1.5 }}>
+            {tradeHistory.length === 0 ? (
+              <Typography
+                variant="body2"
+                sx={{ px: 0.5, py: 1, color: "#9ca3af" }}
+              >
+                No completed or declined trades yet.
+              </Typography>
+            ) : (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                {tradeHistory.map((trade) => (
+                  <Box
+                    key={trade.id}
+                    sx={{
+                      minHeight: 38,
+                      px: 1.25,
+                      py: 0.5,
+                      display: "grid",
+                      gridTemplateColumns: {
+                        xs: "minmax(0, 1fr) auto",
+                        sm: "160px minmax(0, 1fr) 105px auto",
+                      },
+                      alignItems: "center",
+                      gap: 1,
+                      borderRadius: 1.25,
+                      backgroundColor: "#1b2028",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        minWidth: 0,
+                        fontWeight: 800,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {trade.other_user ?? "Unknown user"}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        minWidth: 0,
+                        color: "#cbd5e1",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        display: { xs: "none", sm: "block" },
+                      }}
+                    >
+                      {historyCardSummary(trade)}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "#9ca3af",
+                        display: { xs: "none", sm: "block" },
+                      }}
+                    >
+                      {new Date(trade.completed_at).toLocaleDateString()}
+                    </Typography>
+                    <Chip
+                      size="small"
+                      label={trade.status}
+                      color={trade.status === "accepted" ? "success" : "error"}
+                      sx={{
+                        height: 24,
+                        fontSize: "0.7rem",
+                        fontWeight: 800,
+                        textTransform: "capitalize",
+                      }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        gridColumn: "1 / -1",
+                        color: "#9ca3af",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        display: { xs: "block", sm: "none" },
+                      }}
+                    >
+                      {historyCardSummary(trade)}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </AccordionDetails>
+        </Accordion>
       </Box>
 
       <TradeModal

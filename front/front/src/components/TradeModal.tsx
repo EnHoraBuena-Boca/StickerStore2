@@ -14,10 +14,12 @@ import TextField from "@mui/material/TextField";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import CircularProgress from "@mui/material/CircularProgress";
 import AddIcon from "@mui/icons-material/Add";
+import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import { AdvancedImage, placeholder, lazyload } from "@cloudinary/react";
 import {
@@ -72,6 +74,7 @@ type CardItem = {
 type TradeCardOption = Omit<CardItem, "uuid"> & {
   owned_count: number;
   uuids: string[];
+  current_user_owns: boolean;
 };
 
 type TradeSide = "mine" | "theirs";
@@ -86,15 +89,24 @@ export default function TradeModal({
   const [user, setUser] = React.useState("");
   const [canSubmit, setCanSubmit] = React.useState(true);
   const [alert, setAlert] = React.useState(0);
+  const [actionError, setActionError] = React.useState("");
+  const [problemCardIds, setProblemCardIds] = React.useState<string[]>([]);
   const [myCards, setMyCards] = React.useState<CardItem[]>([]);
   const [theirCards, setTheirCards] = React.useState<CardItem[]>([]);
   const [pickerSide, setPickerSide] = React.useState<TradeSide | null>(null);
   const [pickerCards, setPickerCards] = React.useState<TradeCardOption[]>([]);
+  const [pickerSelections, setPickerSelections] = React.useState<CardItem[]>([]);
   const [pickerRarity, setPickerRarity] = React.useState("All");
   const [pickerSearch, setPickerSearch] = React.useState("");
   const [duplicatesOnly, setDuplicatesOnly] = React.useState(false);
+  const [unownedOnly, setUnownedOnly] = React.useState(false);
   const [pickerLoading, setPickerLoading] = React.useState(false);
   const [pickerError, setPickerError] = React.useState<string | null>(null);
+  const [actionPending, setActionPending] = React.useState(false);
+  const isIncomingTrade = Boolean(trade_id && canSubmit);
+  const hasSelectedCards = myCards.length + theirCards.length > 0;
+  const tradeHasUnavailableCards =
+    isIncomingTrade && problemCardIds.length > 0;
 
   React.useEffect(() => {
     if (!open) {
@@ -106,19 +118,34 @@ export default function TradeModal({
       setTheirCards([]);
       setCanSubmit(true);
       setUser("");
+      setActionPending(false);
       return;
     }
 
-    GetTrade(trade_id).then((result) => {
-      setMyCards(result.user_trade_items);
-      setTheirCards(result.user2_trade_items);
-      setUser(result.user2_name);
-      setCanSubmit(result.current_user_accept === false);
-    });
+    GetTrade(trade_id)
+      .then((result) => {
+        setMyCards(result.user_trade_items ?? []);
+        setTheirCards(result.user2_trade_items ?? []);
+        setUser(result.user2_name ?? "");
+        setCanSubmit(result.current_user_accept === false);
+        const unavailableCardIds = result.unavailable_card_ids ?? [];
+        setProblemCardIds(unavailableCardIds);
+
+        if (unavailableCardIds.length > 0) {
+          setActionError(
+            "This trade cannot be accepted because the original owner no longer owns one or more cards.",
+          );
+          setAlert(2);
+        } else {
+          setActionError("");
+          setAlert(0);
+        }
+      })
+      .catch(() => setAlert(2));
   }, [open, trade_id]);
 
   React.useEffect(() => {
-    if (!alert) {
+    if (alert !== 1) {
       return;
     }
 
@@ -131,7 +158,10 @@ export default function TradeModal({
     setTheirCards([]);
     setPickerSide(null);
     setCanSubmit(true);
+    setActionPending(false);
     setAlert(0);
+    setActionError("");
+    setProblemCardIds([]);
     setUser("");
     onClose();
   };
@@ -148,6 +178,8 @@ export default function TradeModal({
     setPickerRarity("All");
     setPickerSearch("");
     setDuplicatesOnly(false);
+    setUnownedOnly(false);
+    setPickerSelections([]);
     setPickerLoading(true);
     setPickerError(null);
 
@@ -155,7 +187,7 @@ export default function TradeModal({
       const result = (await TradeCardOptions(
         side === "theirs" ? user : undefined,
       )) as TradeCardOption[];
-      setPickerCards(result);
+      setPickerCards(Array.isArray(result) ? result : []);
     } catch (error) {
       setPickerError(
         error instanceof Error ? error.message : "Unable to load cards",
@@ -168,37 +200,53 @@ export default function TradeModal({
   const closeCardPicker = () => {
     setPickerSide(null);
     setPickerCards([]);
+    setPickerSelections([]);
     setPickerError(null);
   };
 
-  const selectPickerCard = (card: TradeCardOption) => {
+  const togglePickerCard = (card: TradeCardOption) => {
     if (pickerSide === null) {
       return;
     }
 
     const selectedCards = pickerSide === "mine" ? myCards : theirCards;
-    const selectedUuids = new Set(
-      selectedCards.map((selected) => selected.uuid),
+    const draftCard = pickerSelections.find((selected) =>
+      card.uuids.includes(selected.uuid),
     );
+
+    if (draftCard) {
+      setPickerSelections((current) =>
+        current.filter((selected) => selected.uuid !== draftCard.uuid),
+      );
+      return;
+    }
+
+    const selectedUuids = new Set([
+      ...selectedCards.map((selected) => selected.uuid),
+      ...pickerSelections.map((selected) => selected.uuid),
+    ]);
     const availableUuid = card.uuids.find((uuid) => !selectedUuids.has(uuid));
 
     if (!availableUuid) {
       return;
     }
 
-    const selectedCard = {
+    setPickerSelections((current) => [...current, {
       card_name: card.card_name,
       season: card.season,
       api_id: card.api_id,
       cardtype: card.cardtype,
       uuid: availableUuid,
-    };
+    }]);
+  };
 
+  const addPickerSelections = () => {
     if (pickerSide === "mine") {
-      setMyCards((current) => [...current, selectedCard]);
+      setMyCards((current) => [...current, ...pickerSelections]);
     } else {
-      setTheirCards((current) => [...current, selectedCard]);
+      setTheirCards((current) => [...current, ...pickerSelections]);
     }
+
     closeCardPicker();
   };
 
@@ -209,11 +257,22 @@ export default function TradeModal({
       .toLocaleLowerCase()
       .includes(pickerSearch.trim().toLocaleLowerCase());
     const matchesDuplicates = !duplicatesOnly || card.owned_count > 1;
-    return matchesRarity && matchesSearch && matchesDuplicates;
+    const matchesOwnership =
+      pickerSide !== "theirs" || !unownedOnly || !card.current_user_owns;
+    return (
+      matchesRarity &&
+      matchesSearch &&
+      matchesDuplicates &&
+      matchesOwnership
+    );
   });
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setActionPending(true);
+    setActionError("");
+    setProblemCardIds([]);
+
     const selectedCardIds = [...myCards, ...theirCards].map(
       (card) => card.uuid,
     );
@@ -226,12 +285,34 @@ export default function TradeModal({
       .then(() => {
         handleClose();
       })
-      .catch(() => setAlert(2));
+      .catch((error) => {
+        setActionPending(false);
+        const tradeError = error as Error & { cardIds?: string[] };
+        setActionError(
+          tradeError instanceof Error
+            ? tradeError.message
+            : "Trade could not be saved.",
+        );
+        setProblemCardIds(tradeError.cardIds ?? []);
+        setAlert(2);
+      });
   };
 
-  const handleDelete = () => {
-    void DestroyTrade(trade_id);
-    handleClose();
+  const handleDelete = async () => {
+    setActionPending(true);
+    setActionError("");
+    setProblemCardIds([]);
+
+    try {
+      await DestroyTrade(trade_id);
+      handleClose();
+    } catch (error) {
+      setActionPending(false);
+      setActionError(
+        error instanceof Error ? error.message : "Trade could not be declined.",
+      );
+      setAlert(2);
+    }
   };
 
   const renderTradeSide = (
@@ -242,6 +323,7 @@ export default function TradeModal({
   ) => {
     const setSelectedCards = side === "mine" ? setMyCards : setTheirCards;
     const addDisabled = side === "theirs" && !user;
+    const readOnly = isIncomingTrade;
 
     return (
       <Box
@@ -263,8 +345,11 @@ export default function TradeModal({
           </Typography>
         </Box>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          {selectedCards.map((card, index) => (
-            <Box
+          {selectedCards.map((card, index) => {
+            const hasProblem = problemCardIds.includes(card.uuid);
+
+            return (
+              <Box
               key={card.uuid}
               sx={{
                 minHeight: 48,
@@ -274,9 +359,9 @@ export default function TradeModal({
                 gap: 1.25,
                 pr: 0.5,
                 overflow: "hidden",
-                border: "1px solid #4b5563",
+                border: hasProblem ? "2px solid #ef4444" : "1px solid #4b5563",
                 borderRadius: 1.5,
-                backgroundColor: "#1f2937",
+                backgroundColor: hasProblem ? "#451a1a" : "#1f2937",
               }}
             >
               <Box
@@ -299,45 +384,53 @@ export default function TradeModal({
               </Typography>
               <Typography
                 variant="caption"
-                sx={{ color: "#9ca3af", fontWeight: 700 }}
-              >
-                {card.cardtype}
-              </Typography>
-              <IconButton
-                aria-label={`Remove ${card.card_name}`}
-                size="small"
-                onClick={() =>
-                  setSelectedCards((current) =>
-                    current.filter((_, cardIndex) => cardIndex !== index),
-                  )
-                }
                 sx={{
-                  color: "#d1d5db",
-                  "&:hover": { color: "#ffffff", backgroundColor: "#991b1b" },
+                  color: hasProblem ? "#fecaca" : "#9ca3af",
+                  fontWeight: 700,
                 }}
               >
-                <CloseIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          ))}
-          <Button
-            variant="outlined"
-            startIcon={<AddIcon />}
-            disabled={addDisabled}
-            onClick={() => void openCardPicker(side)}
-            sx={{
-              minHeight: 48,
-              color: "#e5e7eb",
-              borderColor: "#6b7280",
-              borderStyle: "dashed",
-              "&:hover": {
-                borderColor: "#ffffff",
-                backgroundColor: "rgba(255,255,255,0.06)",
-              },
-            }}
-          >
-            Add card
-          </Button>
+                {hasProblem ? "Unavailable" : card.cardtype}
+              </Typography>
+              {!readOnly && (
+                <IconButton
+                  aria-label={`Remove ${card.card_name}`}
+                  size="small"
+                  onClick={() =>
+                    setSelectedCards((current) =>
+                      current.filter((_, cardIndex) => cardIndex !== index),
+                    )
+                  }
+                  sx={{
+                    color: "#d1d5db",
+                    "&:hover": { color: "#ffffff", backgroundColor: "#991b1b" },
+                  }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              )}
+              </Box>
+            );
+          })}
+          {!readOnly && (
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              disabled={addDisabled}
+              onClick={() => void openCardPicker(side)}
+              sx={{
+                minHeight: 48,
+                color: "#e5e7eb",
+                borderColor: "#6b7280",
+                borderStyle: "dashed",
+                "&:hover": {
+                  borderColor: "#ffffff",
+                  backgroundColor: "rgba(255,255,255,0.06)",
+                },
+              }}
+            >
+              Add card
+            </Button>
+          )}
         </Box>
       </Box>
     );
@@ -365,10 +458,16 @@ export default function TradeModal({
         >
           <Box>
             <Typography id="trade-modal-title" variant="h5" fontWeight={800}>
-              {trade_id ? "Edit Trade" : "Create New Trade"}
+              {isIncomingTrade
+                ? "Review Trade"
+                : trade_id
+                  ? "Edit Trade"
+                  : "Create New Trade"}
             </Typography>
             <Typography variant="body2" sx={{ color: "#9ca3af" }}>
-              Add as many cards as needed from either collection.
+              {isIncomingTrade
+                ? "Review the proposed cards, then accept or decline the trade."
+                : "Add as many cards as needed from either collection."}
             </Typography>
           </Box>
           <IconButton
@@ -401,47 +500,64 @@ export default function TradeModal({
             <Typography sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>
               Trade with
             </Typography>
-            <Autocomplete
-              options={users}
-              value={user || null}
-              onChange={handleUserChange}
-              autoHighlight
-              openOnFocus
-              noOptionsText="No users found"
-              slotProps={{
-                paper: {
-                  sx: { maxHeight: 320 },
-                },
-                listbox: {
-                  sx: { maxHeight: 280 },
-                },
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  size="small"
-                  label="Search users"
-                  placeholder="Start typing a username"
-                />
-              )}
-              sx={{
-                width: { xs: "100%", sm: 280 },
-                "& .MuiInputLabel-root": { color: "#9ca3af" },
-                "& .MuiInputLabel-root.Mui-focused": { color: "#ffffff" },
-                "& .MuiInputBase-input": { color: "#ffffff" },
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#6b7280",
-                },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#9ca3af",
-                },
-                "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                  {
-                    borderColor: "#ffffff",
+            {isIncomingTrade ? (
+              <Typography
+                sx={{
+                  px: 1.5,
+                  py: 0.75,
+                  minWidth: { sm: 200 },
+                  color: "#ffffff",
+                  fontWeight: 800,
+                  borderLeft: "3px solid #bd9523",
+                  backgroundColor: "#1f2937",
+                  borderRadius: 1,
+                }}
+              >
+                {user}
+              </Typography>
+            ) : (
+              <Autocomplete
+                options={users}
+                value={user || null}
+                onChange={handleUserChange}
+                autoHighlight
+                openOnFocus
+                noOptionsText="No users found"
+                slotProps={{
+                  paper: {
+                    sx: { maxHeight: 320 },
                   },
-                "& .MuiSvgIcon-root": { color: "#ffffff" },
-              }}
-            />
+                  listbox: {
+                    sx: { maxHeight: 280 },
+                  },
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    size="small"
+                    label="Search users"
+                    placeholder="Start typing a username"
+                  />
+                )}
+                sx={{
+                  width: { xs: "100%", sm: 280 },
+                  "& .MuiInputLabel-root": { color: "#9ca3af" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#ffffff" },
+                  "& .MuiInputBase-input": { color: "#ffffff" },
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#6b7280",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#9ca3af",
+                  },
+                  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                    {
+                      borderColor: "#ffffff",
+                    },
+                  "& .MuiSvgIcon-root": { color: "#ffffff" },
+                }}
+              />
+            )}
             {!user && (
               <Typography variant="body2" sx={{ color: "#9ca3af" }}>
                 Select a user to choose cards from their collection.
@@ -489,22 +605,34 @@ export default function TradeModal({
               backgroundColor: "#1f2937",
             }}
           >
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={!canSubmit || !user}
-              sx={{ minWidth: 150 }}
-            >
-              {trade_id ? "Save Trade" : "Submit Trade"}
-            </Button>
+            {!tradeHasUnavailableCards && (
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={
+                  !canSubmit ||
+                  !user ||
+                  actionPending ||
+                  (!trade_id && !hasSelectedCards)
+                }
+                sx={{ minWidth: 150 }}
+              >
+                {isIncomingTrade
+                  ? "Accept Trade"
+                  : trade_id
+                    ? "Save Trade"
+                    : "Submit Trade"}
+              </Button>
+            )}
             {trade_id && (
               <Button
                 type="button"
                 variant="outlined"
                 color="error"
-                onClick={handleDelete}
+                disabled={actionPending}
+                onClick={() => void handleDelete()}
               >
-                Delete Trade
+                {isIncomingTrade ? "Decline Trade" : "Delete Trade"}
               </Button>
             )}
             <Button
@@ -520,7 +648,9 @@ export default function TradeModal({
               <Alert severity="success">Trade saved successfully.</Alert>
             )}
             {alert === 2 && (
-              <Alert severity="error">Trade could not be saved.</Alert>
+              <Alert severity="error">
+                {actionError || "Trade could not be saved."}
+              </Alert>
             )}
           </Box>
         </Box>
@@ -554,12 +684,12 @@ export default function TradeModal({
         >
           <Box>
             <Typography variant="h6" fontWeight={800}>
-              Choose a card
+              Choose cards
             </Typography>
             <Typography variant="body2" sx={{ color: "#9ca3af" }}>
               {pickerSide === "theirs"
-                ? `${user}'s collection`
-                : "Your collection"}
+                ? `Select cards from ${user}'s collection`
+                : "Select cards from your collection"}
             </Typography>
           </Box>
           <IconButton
@@ -585,7 +715,7 @@ export default function TradeModal({
               display: "grid",
               gridTemplateColumns: {
                 xs: "1fr",
-                sm: "minmax(220px, 1fr) 180px auto",
+                sm: "minmax(220px, 1fr) 180px auto auto",
               },
               alignItems: "center",
               gap: 1.5,
@@ -637,6 +767,18 @@ export default function TradeModal({
               label="Duplicates Only"
               sx={{ m: 0, whiteSpace: "nowrap" }}
             />
+            {pickerSide === "theirs" && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={unownedOnly}
+                    onChange={(event) => setUnownedOnly(event.target.checked)}
+                  />
+                }
+                label="Unowned Only"
+                sx={{ m: 0, whiteSpace: "nowrap" }}
+              />
+            )}
           </Box>
 
           {pickerError && <Alert severity="error">{pickerError}</Alert>}
@@ -668,15 +810,24 @@ export default function TradeModal({
                 const selectedUuids = new Set(
                   selectedCards.map((selected) => selected.uuid),
                 );
+                const draftCard = pickerSelections.find((selected) =>
+                  card.uuids.includes(selected.uuid),
+                );
+                const unavailableUuids = new Set([
+                  ...selectedUuids,
+                  ...pickerSelections.map((selected) => selected.uuid),
+                ]);
                 const availableCopies = card.uuids.filter(
-                  (uuid) => !selectedUuids.has(uuid),
+                  (uuid) => !unavailableUuids.has(uuid),
                 ).length;
+                const isSelected = Boolean(draftCard);
 
                 return (
                   <Button
                     key={`${card.season}-${card.cardtype}-${card.api_id}`}
-                    disabled={availableCopies === 0}
-                    onClick={() => selectPickerCard(card)}
+                    disabled={!isSelected && availableCopies === 0}
+                    onClick={() => togglePickerCard(card)}
+                    aria-pressed={isSelected}
                     sx={{
                       p: 1,
                       minWidth: 0,
@@ -686,14 +837,16 @@ export default function TradeModal({
                       gap: 0.75,
                       textTransform: "none",
                       color: "#ffffff",
-                      border: `2px solid ${
-                        rarityColors[card.cardtype] ?? "#6b7280"
+                      border: `3px solid ${
+                        isSelected
+                          ? "#22c55e"
+                          : rarityColors[card.cardtype] ?? "#6b7280"
                       }`,
                       borderRadius: 2,
-                      backgroundColor: "#1f2937",
+                      backgroundColor: isSelected ? "#163525" : "#1f2937",
                       position: "relative",
                       "&:hover": {
-                        backgroundColor: "#374151",
+                        backgroundColor: isSelected ? "#1d4d31" : "#374151",
                         transform: "translateY(-2px)",
                       },
                       "&.Mui-disabled": {
@@ -701,7 +854,27 @@ export default function TradeModal({
                         opacity: 0.4,
                       },
                     }}
-                  >
+                    >
+                    {isSelected && (
+                      <Box
+                        component="span"
+                        sx={{
+                          position: "absolute",
+                          top: 5,
+                          right: 5,
+                          zIndex: 2,
+                          width: 28,
+                          height: 28,
+                          display: "grid",
+                          placeItems: "center",
+                          borderRadius: "50%",
+                          color: "#052e16",
+                          backgroundColor: "#86efac",
+                        }}
+                      >
+                        <CheckIcon fontSize="small" />
+                      </Box>
+                    )}
                     <Box
                       component="span"
                       sx={{
@@ -769,6 +942,30 @@ export default function TradeModal({
             </Box>
           )}
         </DialogContent>
+        <DialogActions
+          sx={{
+            px: 2.5,
+            py: 1.5,
+            gap: 1,
+            borderTop: "1px solid #374151",
+            backgroundColor: "#1f2937",
+          }}
+        >
+          <Typography variant="body2" sx={{ mr: "auto", color: "#cbd5e1" }}>
+            {pickerSelections.length} selected
+          </Typography>
+          <Button color="inherit" onClick={closeCardPicker}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            disabled={pickerSelections.length === 0}
+            onClick={addPickerSelections}
+          >
+            Add Selected
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );

@@ -3,11 +3,24 @@ import Box from "@mui/material/Box";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
+import Badge from "@mui/material/Badge";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useGlobalContext } from "../utils/ContextProvider.tsx";
+import {
+  Trades,
+  tradesUpdatedEvent,
+} from "../api/TradingApi.ts";
+
+interface TradesResponse {
+  current_user_accept?: boolean[];
+}
+
 export default function FunMenu() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [pendingTradeCount, setPendingTradeCount] = React.useState(0);
+  const location = useLocation();
 
   const open = Boolean(anchorEl);
 
@@ -20,6 +33,54 @@ export default function FunMenu() {
   };
   const { auth } = useGlobalContext();
 
+  const loadPendingTradeCount = React.useCallback(async () => {
+    if (!auth) {
+      setPendingTradeCount(0);
+      return;
+    }
+
+    try {
+      const result = await Trades() as TradesResponse;
+      const pendingCount = result.current_user_accept?.filter(
+        (accepted) => !accepted,
+      ).length ?? 0;
+
+      setPendingTradeCount(pendingCount);
+    } catch {
+      setPendingTradeCount(0);
+    }
+  }, [auth]);
+
+  React.useEffect(() => {
+    void loadPendingTradeCount();
+  }, [loadPendingTradeCount, location.pathname]);
+
+  React.useEffect(() => {
+    if (!auth) {
+      return;
+    }
+
+    const refreshPendingTrades = () => {
+      void loadPendingTradeCount();
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        refreshPendingTrades();
+      }
+    };
+    const intervalId = window.setInterval(refreshPendingTrades, 30_000);
+
+    window.addEventListener("focus", refreshPendingTrades);
+    window.addEventListener(tradesUpdatedEvent, refreshPendingTrades);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshPendingTrades);
+      window.removeEventListener(tradesUpdatedEvent, refreshPendingTrades);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [auth, loadPendingTradeCount]);
 
   return (
     <React.Fragment>
@@ -33,8 +94,25 @@ export default function FunMenu() {
             aria-controls={open ? "account-menu" : undefined}
             aria-haspopup="true"
             aria-expanded={open ? "true" : undefined}
+            aria-label={
+              pendingTradeCount > 0
+                ? `Trading, ${pendingTradeCount} pending action`
+                : "Trading"
+            }
           >
             Trading
+            {pendingTradeCount > 0 && (
+              <Badge
+                badgeContent={pendingTradeCount}
+                color="error"
+                max={9}
+                sx={{ ml: 1 }}
+              >
+                <NotificationsActiveIcon
+                  sx={{ color: "#f6d365", fontSize: 20 }}
+                />
+              </Badge>
+            )}
           </Button>
         )}
       </Box>
@@ -77,6 +155,18 @@ export default function FunMenu() {
         {auth && (
           <MenuItem component={Link} to="/Trading" onClick={handleClose}>
             Trading
+            {pendingTradeCount > 0 && (
+              <Badge
+                badgeContent={pendingTradeCount}
+                color="error"
+                max={9}
+                sx={{ ml: 1.5 }}
+              >
+                <NotificationsActiveIcon
+                  sx={{ color: "#bd9523", fontSize: 20 }}
+                />
+              </Badge>
+            )}
           </MenuItem>
         )}
         {auth && (

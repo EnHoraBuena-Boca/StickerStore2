@@ -13,10 +13,18 @@ interface SignUpProps {
 }
 
 export default function FormDialog({ open, onClose }: SignUpProps) {
+  const textFieldSx = {
+    "& .MuiInputBase-input": {
+      color: "#111827",
+      caretColor: "#111827",
+      cursor: "text",
+    },
+  };
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const formJson = Object.fromEntries((formData as any).entries());
+    const formJson = Object.fromEntries(formData.entries());
     const email = formJson.UserName;
     const pass = formJson.password;
     getUser(email, pass).then(() => {
@@ -42,9 +50,9 @@ export default function FormDialog({ open, onClose }: SignUpProps) {
               type="username"
               fullWidth
               variant="standard"
+              sx={textFieldSx}
             />
             <TextField
-              autoFocus
               required
               margin="dense"
               id="password"
@@ -53,6 +61,7 @@ export default function FormDialog({ open, onClose }: SignUpProps) {
               type="password"
               fullWidth
               variant="standard"
+              sx={textFieldSx}
             />
           </form>
         </DialogContent>

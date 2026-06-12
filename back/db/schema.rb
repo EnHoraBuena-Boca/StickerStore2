@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_11_000000) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_12_010000) do
   create_table "original_cards", id: :integer, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -27,6 +27,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_11_000000) do
     t.bigint "trade_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "offered_by_user_id"
+    t.index ["offered_by_user_id"], name: "index_trade_items_on_offered_by_user_id"
     t.index ["trade_id"], name: "index_trade_items_on_trade_id"
   end
 
@@ -43,6 +45,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_11_000000) do
   create_table "trades", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "status", default: 0, null: false
+    t.index ["status"], name: "index_trades_on_status"
   end
 
   create_table "user_cards", primary_key: "uuid", id: { type: :binary, limit: 16 }, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
