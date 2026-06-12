@@ -2,7 +2,6 @@ import * as React from "react";
 import Box from "@mui/material/Box";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 
 import { Link } from "react-router-dom";
@@ -19,7 +18,7 @@ export default function FunMenu() {
   const handleClose = () => {
     setAnchorEl(null);
   };
-  const { user, auth } = useGlobalContext();
+  const { auth } = useGlobalContext();
 
 
   return (

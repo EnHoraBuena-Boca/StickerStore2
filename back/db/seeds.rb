@@ -1,8 +1,3 @@
-OriginalCard.create!({"id" => 737, "name" => "matt oopsie wrongsport turk", "cardtype" => "Diamond", "approved" => true, "api_id" => "fzxffcgr9swulqzfikkj", "season" => 23})
-OriginalCard.create!({"id" => 738, "name" => "john faxe kondi", "cardtype" => "Diamond", "approved" => true, "api_id" => "d9vcroonwaou1zqseroi", "season" => 23})
-OriginalCard.create!({"id" => 739, "name" => "arsene ngoussou", "cardtype" => "Diamond", "approved" => true, "api_id" => "r4xxeywatul2ncir3dpo", "season" => 23})
-OriginalCard.create!({"id" => 740, "name" => "lucas james", "cardtype" => "Diamond", "approved" => true, "api_id" => "ep9nsfjgm6wbvlprfxwz", "season" => 23})
-OriginalCard.create!({"id" => 741, "name" => "hans grudnar", "cardtype" => "Diamond", "approved" => true, "api_id" => "qsesdymnk4atwl3c8ek3", "season" => 23})
 OriginalCard.create!({"id" => 743, "name" => "alex calderon", "cardtype" => "Gold", "approved" => true, "api_id" => "slwxsyzrjzuhrgksfm1x", "season" => 23})
 OriginalCard.create!({"id" => 744, "name" => "charlie chambers", "cardtype" => "Gold", "approved" => true, "api_id" => "mu3qfqpfxw3mvhrigolr", "season" => 23})
 OriginalCard.create!({"id" => 745, "name" => "dina skovgaard", "cardtype" => "Gold", "approved" => true, "api_id" => "ixiymacbvzdavdpdq4cf", "season" => 23})

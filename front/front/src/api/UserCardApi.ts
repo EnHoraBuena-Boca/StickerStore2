@@ -103,6 +103,27 @@ export async function TradingCardLookup(rarity: string, name?: string) {
   }
 }
 
+export async function TradeCardOptions(username?: string) {
+  const url = `${api}/api/v1/cards_by_rarity`;
+  const formData = new FormData();
+  formData.append("visual", "true");
+  if (username) {
+    formData.append("name", username);
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Response status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 export async function FactoryPack(cards: string[] = [], rarity: string) {
   const url = `${api}/api/v1/factory_pack`;
 

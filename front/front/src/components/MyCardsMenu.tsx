@@ -17,7 +17,7 @@ export default function StickerNavigation() {
             size="small"
             sx={{ height: "100%", color: "#ffffff" }}
           >
-            My Stickers
+            My Collection
           </Button>
           <Button
             component={Link}

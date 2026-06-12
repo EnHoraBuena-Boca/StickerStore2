@@ -50,6 +50,28 @@ class Api::V1::UserCardsController < ApplicationController
   end
 
   def cards_by_rarity
+    if ActiveModel::Type::Boolean.new.cast(params[:visual])
+      user = params[:name].present? ? User.find_by(username: params[:name]) : current_user
+      return render json: [] unless user
+
+      cards = UserCard
+        .where(user_id: Array(user.id).first)
+        .order(cardtype: :desc, card_name: :asc)
+        .group_by { |card| [card.card_name, card.season, card.api_id, card.cardtype] }
+        .map do |(card_name, season, api_id, cardtype), owned_cards|
+          {
+            card_name: card_name,
+            season: season,
+            api_id: api_id,
+            cardtype: cardtype,
+            owned_count: owned_cards.length,
+            uuids: owned_cards.map { |card| card.uuid.to_s }
+          }
+        end
+
+      return render json: cards
+    end
+
     if params[:name] == "undefined"
       @user_cards = UserCard.where(user_id: session[:current_user_id], cardtype: params[:cardtype])
         .where(created_at: UserCard.where(user_id: session[:current_user_id], cardtype: params[:cardtype]).group(:card_name).select("MAX(created_at)")).pluck(:card_name, :season, :api_id, :uuid, :cardtype)

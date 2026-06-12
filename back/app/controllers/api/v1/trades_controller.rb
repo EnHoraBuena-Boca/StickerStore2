@@ -7,17 +7,40 @@ class Api::V1::TradesController < ApplicationController
     @trades = []
     @current_user_accept = []
     @user2_name = []
+    @current_user_rarities = []
+    @other_user_rarities = []
+    current_user_id = Array(session[:current_user_id]).first
+
     for tps in @trade_participants
       trade = Trade.find(tps.trade_id)
       if trade.fully_accepted?
         next
       end
+
+      other_user_id = TradeParticipant
+        .where(trade_id: tps.trade_id)
+        .where.not(user_id: session[:current_user_id])
+        .pick(:user_id)
+      trade_cards = trade.trade_items.includes(:user_card).map(&:user_card)
+
       @trades << tps.trade_id
-      @user2_name << User.where(id: TradeParticipant.where(trade_id: tps.trade_id).where.not(user_id: session[:current_user_id]).pick(:user_id)).pick(:username)
+      @user2_name << User.where(id: other_user_id).pick(:username)
       @current_user_accept << tps.accept
+      @current_user_rarities << rarity_counts(
+        trade_cards.select { |card| card.user_id == current_user_id }
+      )
+      @other_user_rarities << rarity_counts(
+        trade_cards.select { |card| card.user_id == other_user_id }
+      )
     end
 
-    render json: {trades: @trades, current_user_accept: @current_user_accept, user2_name: @user2_name }
+    render json: {
+      trades: @trades,
+      current_user_accept: @current_user_accept,
+      user2_name: @user2_name,
+      current_user_rarities: @current_user_rarities,
+      other_user_rarities: @other_user_rarities
+    }
   end
 
   # GET /tradings/1
@@ -134,6 +157,12 @@ class Api::V1::TradesController < ApplicationController
   end
 
   private
+    def rarity_counts(cards)
+      cards.each_with_object(Hash.new(0)) do |card, counts|
+        counts[card.cardtype] += 1
+      end
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_trading
       @trading = Trade.find(params.expect(:id))
