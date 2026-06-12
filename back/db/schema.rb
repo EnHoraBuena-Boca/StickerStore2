@@ -10,15 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_11_040508) do
-  create_table "availible_packs", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
-    t.integer "packs_left", default: 0
-    t.bigint "user_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["user_id"], name: "index_availible_packs_on_user_id"
-  end
-
+ActiveRecord::Schema[8.0].define(version: 2026_06_11_000000) do
   create_table "original_cards", id: :integer, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -27,6 +19,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_11_040508) do
     t.boolean "approved", default: false
     t.string "api_id"
     t.integer "season"
+    t.string "team", limit: 100
   end
 
   create_table "trade_items", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
@@ -65,9 +58,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_11_040508) do
 
   create_table "users", id: :integer, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.integer "status", default: 0
-    t.string "first_name"
+    t.string "username"
     t.string "password"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "packs_available", default: 0, null: false
   end
 end

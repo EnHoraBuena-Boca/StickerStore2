@@ -1,58 +1,263 @@
-import { AnimatePresence, motion } from "motion/react";
+import { motion, useMotionValue, useSpring } from "motion/react";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import { cld } from "./lib/cloudinary.ts";
 import Box from "@mui/material/Box";
-import { PackCards, CommitCards } from "./api/PackApi.ts";
+import CircularProgress from "@mui/material/CircularProgress";
+import Modal from "@mui/material/Modal";
+import Typography from "@mui/material/Typography";
+import { GetPackCount, OpenPack } from "./api/PackApi.ts";
+import type { CardRarity, PackCard } from "./api/PackApi.ts";
 import * as React from "react";
 import Alert from "@mui/material/Alert";
 import StickerPackLogo from "./assets/StickerPackLogo.png";
+import SSLSticker from "./assets/SSLSticker.png";
 
 import { AdvancedImage, placeholder } from "@cloudinary/react";
+import type { CloudinaryImage } from "@cloudinary/url-gen";
 import { center } from "@cloudinary/url-gen/qualifiers/textAlignment";
 
 const container: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  width: 100,
-  height: 160,
+  width: 155,
+  height: 220,
   position: "relative",
-  justifyContent: "flex-end",
+  justifyContent: "center",
   alignItems: "center",
   marginLeft: "auto",
   marginRight: "auto",
-};
-
-const button: React.CSSProperties = {
-  backgroundColor: "#0cdcf7",
-  borderRadius: "10px",
-  padding: "10px 20px",
-  color: "#0f1115",
-  position: "absolute",
-  bottom: 0,
-  left: 0,
-  right: 0,
+  perspective: 800,
 };
 
 const packLogo: React.CSSProperties = {
-  height: "200px",
-  width: "100px",
-  position: "relative",
-  justifyContent: "flex-end",
-  alignItems: "center",
-  marginLeft: "auto",
-  marginRight: "auto",
-  display: "flex",
-  flexDirection: "column",
+  display: "block",
+  width: "300px",
+  maxWidth: "100%",
+  height: "auto",
 };
 
-async function getPackCards(): Promise<string[]> {
-  const result = await PackCards();
-  return result;
+const rarityColors: Record<CardRarity, string> = {
+  Bronze: "#A97142",
+  Silver: "#C0C0C0",
+  Gold: "#FFD700",
+  Diamond: "#B9F2FF",
+};
+
+interface RevealedCardProps {
+  image: CloudinaryImage;
+  card: PackCard;
+  height?: string;
 }
-async function commitPackCards(ids: string[]) {
-  const result = await CommitCards(ids);
-  return result;
+
+function RevealedCard({
+  image,
+  card,
+  height = "520px",
+}: RevealedCardProps) {
+  const rotateXValue = useMotionValue(0);
+  const rotateYValue = useMotionValue(0);
+  const xValue = useMotionValue(0);
+  const yValue = useMotionValue(0);
+
+  const springConfig = { stiffness: 260, damping: 22 };
+  const rotateX = useSpring(rotateXValue, springConfig);
+  const rotateY = useSpring(rotateYValue, springConfig);
+  const x = useSpring(xValue, springConfig);
+  const y = useSpring(yValue, springConfig);
+  const rarityColor = rarityColors[card.rarity];
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const horizontal = (event.clientX - bounds.left) / bounds.width - 0.5;
+    const vertical = (event.clientY - bounds.top) / bounds.height - 0.5;
+
+    rotateXValue.set(vertical * -18);
+    rotateYValue.set(horizontal * 18);
+    xValue.set(horizontal * 16);
+    yValue.set(vertical * 16);
+  };
+
+  const resetTilt = () => {
+    rotateXValue.set(0);
+    rotateYValue.set(0);
+    xValue.set(0);
+    yValue.set(0);
+  };
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        perspective: 900,
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{
+        opacity: { duration: 0.8, delay: 0.5 },
+        scale: { duration: 0.8, delay: 0.5 },
+      }}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={resetTilt}
+      style={{
+        cursor: "move",
+        perspective: 700,
+        position: "relative",
+      }}
+    >
+      <motion.div
+        style={{
+          rotateX,
+          rotateY,
+          x,
+          y,
+          transformPerspective: 700,
+          transformStyle: "preserve-3d",
+          border: `3px solid ${rarityColor}`,
+          borderRadius: 8,
+          boxShadow: `0 0 12px ${rarityColor}, 0 0 28px ${rarityColor}`,
+          overflow: "hidden",
+        }}
+      >
+        <AdvancedImage
+          rel="preload"
+          height={height}
+          cldImg={image}
+          plugins={[placeholder({ mode: "blur" })]}
+        />
+      </motion.div>
+    </motion.div>
+    </Box>
+  );
+}
+
+interface StickerThumbnailProps {
+  image: CloudinaryImage;
+  card: PackCard;
+  onClick: () => void;
+}
+
+function StickerThumbnail({ image, card, onClick }: StickerThumbnailProps) {
+  const rarityColor = rarityColors[card.rarity];
+
+  return (
+    <motion.button
+      type="button"
+      whileHover={{ scale: 1.08 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      style={{
+        background: "transparent",
+        border: `3px solid ${rarityColor}`,
+        borderRadius: 6,
+        boxShadow: `0 0 9px ${rarityColor}, 0 0 20px ${rarityColor}`,
+        cursor: "pointer",
+        padding: 0,
+        position: "relative",
+        overflow: "visible",
+      }}
+    >
+      <AdvancedImage
+        rel="preload"
+        height="210px"
+        cldImg={image}
+        plugins={[placeholder({ mode: "blur" })]}
+      />
+      {card.new_card && (
+        <Box
+          component="span"
+          sx={{
+            position: "absolute",
+            top: -13,
+            left: "50%",
+            transform: "translateX(-50%)",
+            color: "#53e36f",
+            border: "2px solid #53e36f",
+            bgcolor: "#102516",
+            borderRadius: 1,
+            px: 0.75,
+            py: 0.25,
+            fontSize: "0.68rem",
+            fontWeight: 800,
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+            boxShadow: "0 0 8px rgba(83, 227, 111, 0.7)",
+          }}
+        >
+          NEW STICKER
+        </Box>
+      )}
+    </motion.button>
+  );
+}
+
+interface FlippableStickerProps {
+  image: CloudinaryImage;
+  card: PackCard;
+  revealed: boolean;
+  onReveal: () => void;
+  onOpen: () => void;
+}
+
+function FlippableSticker({
+  image,
+  card,
+  revealed,
+  onReveal,
+  onOpen,
+}: FlippableStickerProps) {
+  return (
+    <motion.div
+      animate={{ rotateY: revealed ? 180 : 0 }}
+      transition={{ duration: 0.35, ease: "easeInOut" }}
+      style={{
+        width: 155,
+        height: 220,
+        position: "relative",
+        transformStyle: "preserve-3d",
+      }}
+    >
+      <motion.button
+        type="button"
+        aria-label="Reveal sticker"
+        onClick={onReveal}
+        whileHover={{ scale: revealed ? 1 : 1.05 }}
+        whileTap={{ scale: revealed ? 1 : 0.98 }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "transparent",
+          border: 0,
+          cursor: revealed ? "default" : "pointer",
+          padding: 0,
+          backfaceVisibility: "hidden",
+        }}
+      >
+        <img src={SSLSticker} alt="SSL sticker card back" height="210" />
+      </motion.button>
+
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transform: "rotateY(180deg)",
+          backfaceVisibility: "hidden",
+        }}
+      >
+        <StickerThumbnail image={image} card={card} onClick={onOpen} />
+      </Box>
+    </motion.div>
+  );
 }
 
 export default function PackPage() {
@@ -60,152 +265,238 @@ export default function PackPage() {
   const [isVisible, setIsVisible] = React.useState<boolean[]>(
     Array(5).fill(false),
   );
-  const [cardPublicIds, setCardPublicIds] = React.useState<string[]>([]);
-  const [success, setSuccess] = React.useState(0);
-  const [state, setState] = React.useState(0);
+  const [packCards, setPackCards] = React.useState<PackCard[]>([]);
+  const [packsAvailable, setPacksAvailable] = React.useState<number | null>(
+    null,
+  );
+  const [opening, setOpening] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [selectedCardIndex, setSelectedCardIndex] = React.useState<
+    number | null
+  >(null);
 
   React.useEffect(() => {
-    const data = getPackCards();
-    data.then((result: any) => {
-      setCardPublicIds(result.card_public_ids);
-    });
-  }, [state]);
+    GetPackCount()
+      .then((result) => setPacksAvailable(result.packs_available))
+      .catch((requestError: unknown) => {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Unable to load packs",
+        );
+      });
+  }, []);
 
-  const handleClick = async () => {
-    setSubmit(true);
-    const status = commitPackCards(cardPublicIds);
-    status.then((result) => {
-      if (result == 200) {
-        setSuccess(1);
-      } else {
-        setSuccess(2);
-      }
-    });
+  const handleOpenPack = async () => {
+    if (!packsAvailable || opening) return;
+
+    setOpening(true);
+    setError("");
+
+    try {
+      const result = await OpenPack();
+      setIsVisible(Array(5).fill(false));
+      setSelectedCardIndex(null);
+      setPackCards(result.cards);
+      setPacksAvailable(result.packs_available);
+      setSubmit(true);
+    } catch (requestError: unknown) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to open pack",
+      );
+    } finally {
+      setOpening(false);
+    }
+  };
+
+  const returnToPacks = () => {
+    setSubmit(false);
+    setPackCards([]);
+    setIsVisible(Array(5).fill(false));
+    setSelectedCardIndex(null);
   };
 
   const images = React.useMemo(() => {
-    return cardPublicIds.map((card) =>
-      cld.image(card).quality("auto").format("auto"),
+    return packCards.map((card) =>
+      cld.image(card.public_id).quality("auto").format("auto"),
     );
-  }, [cardPublicIds]);
+  }, [packCards]);
 
-  React.useEffect(() => {
-    if (!success) return;
-
-    const timer = setTimeout(() => {
-      setSuccess(0);
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, [success]);
   return (
-    <>
+    <Box
+      sx={{
+        width: "100%",
+        minHeight: "calc(100vh - 112px)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        boxSizing: "border-box",
+      }}
+    >
       {!submit && (
-        <div>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
           <motion.div
             style={{
-              width: 150,
-              height: 100,
+              width: 300,
+              maxWidth: "calc(100vw - 32px)",
               borderRadius: 5,
               justifySelf: "center",
             }}
-            whileTap={{ scale: 0.8 }}
+            whileTap={packsAvailable ? { scale: 0.95 } : undefined}
           >
             <img
               src={StickerPackLogo}
-              onClick={handleClick}
-              style={{ ...packLogo, cursor: "pointer" }}
+              alt="Sticker pack"
+              style={packLogo}
             />
           </motion.div>
-        </div>
+          <Typography variant="h6">
+            {packsAvailable === null
+              ? "Loading packs..."
+              : `Packs available: ${packsAvailable}`}
+          </Typography>
+          <Button
+            type="button"
+            variant="contained"
+            onClick={handleOpenPack}
+            disabled={opening || !packsAvailable}
+            startIcon={opening ? <CircularProgress size={18} /> : undefined}
+          >
+            {opening ? "Opening..." : "Open"}
+          </Button>
+        </Box>
+      )}
+      {submit && (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 1,
+            width: "calc(100% - 32px)",
+            maxWidth: 980,
+            mx: "auto",
+            mb: 2,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 2.5,
+            }}
+          >
+            <Button
+              type="button"
+              variant="text"
+              onClick={returnToPacks}
+              sx={{
+                color: "#ffffff",
+                fontSize: "1rem",
+                fontWeight: 600,
+                lineHeight: 1.5,
+                minWidth: 0,
+                p: 0,
+                textTransform: "none",
+              }}
+            >
+              {"< Return to Packs"}
+            </Button>
+            <Typography
+              sx={{ fontSize: "1rem", fontWeight: 600, lineHeight: 1.5 }}
+            >
+              Packs Available: {packsAvailable ?? 0}
+            </Typography>
+          </Box>
+          <Button
+            type="button"
+            variant="outlined"
+            onClick={handleOpenPack}
+            disabled={opening || !packsAvailable}
+            startIcon={opening ? <CircularProgress size={16} /> : undefined}
+          >
+            {opening ? "Opening..." : "Open Next Pack"}
+          </Button>
+        </Box>
       )}
       <Box
         sx={{
           display: "flex",
           flexDirection: "row",
+          flexWrap: "wrap",
+          justifyContent: "center",
           gap: 2,
           alignItems: "center",
-          width: "100vw",
+          width: "calc(100% - 32px)",
+          maxWidth: 980,
+          mx: "auto",
         }}
       >
         {submit &&
           images.map((id, index) => (
             <Grid
+              key={`${packCards[index].public_id}-${index}`}
               display="flex"
               justifyContent="center"
               alignItems="center"
-              size="grow"
+              size="auto"
+              sx={{ width: 165 }}
             >
               <div style={container}>
-                <AnimatePresence initial={false}>
-                  {isVisible[index] ? (
-                    <motion.div
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{
-                        duration: 0.8,
-                        delay: 0.5,
-                        ease: [0, 0.71, 0.2, 1.01],
-                      }}
-                      whileHover={{ scale: 2 }}
-                    >
-                      <AdvancedImage
-                        rel="preload"
-                        height="200px"
-                        cldImg={id}
-                        plugins={[placeholder({ mode: "blur" })]}
-                      />
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
-                {!isVisible[index] ? (
-                  <motion.button
-                    style={button}
-                    onClick={() =>
-                      setIsVisible((prev) =>
-                        prev.map((v, i) => (i === index ? !v : v)),
-                      )
-                    }
-                    whileTap={{ y: 1 }}
-                  >
-                    {isVisible[index] ? "Hide" : "Show"}
-                  </motion.button>
-                ) : null}
+                <FlippableSticker
+                  image={id}
+                  card={packCards[index]}
+                  revealed={isVisible[index]}
+                  onReveal={() =>
+                    setIsVisible((prev) =>
+                      prev.map((visible, cardIndex) =>
+                        cardIndex === index ? true : visible,
+                      ),
+                    )
+                  }
+                  onOpen={() => setSelectedCardIndex(index)}
+                />
               </div>
             </Grid>
           ))}
       </Box>
-      <Box
-        sx={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          position: "fixed",
-          bottom: 40,
-        }}
-      >
-        {submit && (
-          <Button
-            variant="outlined"
-            onClick={() => {
-              setSubmit(false);
-              setState((state) => state + 1);
-              for (let index = 0; index < 5; index++) {
-                setIsVisible((prev) =>
-                  prev.map((v, i) => (i === index ? false : v)),
-                );
-              }
-            }}
-          >
-            Next Pack
-          </Button>
-        )}
-      </Box>
-      {success == 2 && (
+      {error && (
         <Alert severity="error" sx={{ mt: 20, justifySelf: center }}>
-          Error, contact admin
+          {error}
         </Alert>
       )}
-    </>
+      <Modal
+        open={selectedCardIndex !== null}
+        onClose={() => setSelectedCardIndex(null)}
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            outline: "none",
+          }}
+        >
+          {selectedCardIndex !== null && (
+            <RevealedCard
+              image={images[selectedCardIndex]}
+              card={packCards[selectedCardIndex]}
+            />
+          )}
+        </Box>
+      </Modal>
+    </Box>
   );
 }

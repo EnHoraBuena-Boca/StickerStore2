@@ -14,10 +14,10 @@ Rails.application.routes.draw do
         get 'unapproved', to: 'original_cards#unapproved'
         post 'approved', to: 'original_cards#approved'
         post 'delete_cards', to: 'original_cards#delete_cards'
-        get 'pack', to: 'user_cards#pack'
+        get 'pack_count', to: 'user_cards#pack_count'
+        post 'pack', to: 'user_cards#pack'
         get 'get_user_card_count', to: 'user_cards#get_user_card_count'
         post 'cards_with_params', to: 'user_cards#cards_with_params'
-        post 'commit_to_users_folder', to: 'user_cards#commit_to_users_folder'
         post 'cards_by_rarity', to: 'user_cards#cards_by_rarity'
         post 'factory_pack', to: 'user_cards#factory_pack'
         resources :users, :original_cards, :user_cards, :trades

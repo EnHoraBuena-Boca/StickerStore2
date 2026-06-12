@@ -12,6 +12,7 @@ import PrivateRoutes from "./utils/PrivateRoute.tsx";
 import UserProtectedRoute from "./utils/UserProtectedRoute.tsx";
 import TradingMenu from "./components/TradingMenu.tsx";
 import MyCardsMenu from "./components/MyCardsMenu.tsx";
+import PageWrapper from "./components/PageWrapper.tsx";
 
 import "./App.css";
 
@@ -21,24 +22,10 @@ function App() {
   }, []);
 
   return (
-    <>
-      <Routes>
-        <Route element={<PrivateRoutes />}>
-          <Route element={<UserProtectedRoute />}>
-            <Route path="/CardUpload" element={<CardUpload />} />
-          </Route>
-          <Route path="/PackPage" element={<PackPage />} />
-          <Route path="/MyFolder" element={<MyFolder />} />
-          <Route path="/Trading" element={<Trading />} />
-          <Route path="/Factory" element={<Factory />} />
-        </Route>
-
-        <Route path="/" element={<Home />} />
-      </Routes>
-
+    <div className="app-shell">
       <header className="site-header">
         <div className="header-right">
-          <Link to="/" className="Title">
+          <Link to="/" className="site-title">
             SSL Sticker Store
           </Link>
           <MyCardsMenu />
@@ -46,7 +33,22 @@ function App() {
         </div>
         <Menu />
       </header>
-    </>
+      <PageWrapper>
+        <Routes>
+          <Route element={<PrivateRoutes />}>
+            <Route element={<UserProtectedRoute />}>
+              <Route path="/CardUpload" element={<CardUpload />} />
+            </Route>
+            <Route path="/PackPage" element={<PackPage />} />
+            <Route path="/MyFolder" element={<MyFolder />} />
+            <Route path="/Trading" element={<Trading />} />
+            <Route path="/Factory" element={<Factory />} />
+          </Route>
+
+          <Route path="/" element={<Home />} />
+        </Routes>
+      </PageWrapper>
+    </div>
   );
 }
 
