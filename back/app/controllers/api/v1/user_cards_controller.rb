@@ -8,7 +8,7 @@ class Api::V1::UserCardsController < ApplicationController
       params[:sort]
     )
 
-    render json: serialize_grouped_cards(user_cards.then(&paginate))
+    render json: serialize_grouped_cards(paginate_cards(user_cards))
   end
 
   # GET /user_cards/1
@@ -34,33 +34,34 @@ class Api::V1::UserCardsController < ApplicationController
       cards = all_cards_with_ownership(params[:name], params[:sort])
 
       return render json: {
-        cards: serialize_grouped_cards(cards.then(&paginate)),
-        count: cards.except(:select, :order).count
+        cards: serialize_grouped_cards(paginate_cards(cards)),
+        count: cards.length
       }
     end
 
     user_cards = UserCard.where(user_id: session[:current_user_id])
-    user_cards = user_cards.where("card_name LIKE ?", "%#{params[:name]}%") if params[:name].present?
+    user_cards = filter_by_name(user_cards, :card_name, params[:name])
     grouped_cards = grouped_user_cards(user_cards, params[:sort])
 
     render json: {
-      cards: serialize_grouped_cards(grouped_cards.then(&paginate)),
+      cards: serialize_grouped_cards(paginate_cards(grouped_cards)),
       count: unique_card_count(user_cards)
     }
   end
 
   def cards_by_rarity
-    if params[:name] == "undefined"
-      @user_cards = UserCard.where(user_id: session[:current_user_id], cardtype: params[:cardtype])
-        .where(created_at: UserCard.where(user_id: session[:current_user_id], cardtype: params[:cardtype]).group(:card_name).select("MAX(created_at)")).pluck(:card_name, :season, :api_id, :uuid, :cardtype)
-
+    user_id = if params[:name] == "undefined"
+      session[:current_user_id]
     else
-      user = User.find_by(username: params[:name])
-      @user_cards = UserCard.where(user_id: user, cardtype: params[:cardtype])
-        .where(created_at: UserCard.where(user_id: user, cardtype: params[:cardtype]).group(:card_name).select("MAX(created_at)")).pluck(:card_name, :season, :api_id, :uuid, :cardtype)
-
+      User.find_by(username: params[:name])&.id
     end
-      
+
+    cards = UserCard.where(user_id: user_id, cardtype: params[:cardtype])
+    latest_card_times = cards.group(:card_name).maximum(:created_at).values
+    @user_cards = cards
+      .where(created_at: latest_card_times)
+      .pluck(:card_name, :season, :api_id, :uuid, :cardtype)
+
     render json: @user_cards
   end
 
@@ -220,64 +221,51 @@ class Api::V1::UserCardsController < ApplicationController
     end
 
     def grouped_user_cards(user_cards, sort)
-      user_cards
-        .joins(<<~SQL.squish)
-          LEFT JOIN (
-            SELECT api_id, season, MAX(team) AS team
-            FROM original_cards
-            GROUP BY api_id, season
-          ) original_card_details
-            ON original_card_details.api_id = user_cards.api_id
-            AND original_card_details.season = user_cards.season
-        SQL
-        .select(
-          "user_cards.card_name",
-          "user_cards.api_id",
-          "user_cards.cardtype",
-          "user_cards.season",
-          "original_card_details.team AS team",
-          "COUNT(*) AS owned_count"
-        )
-        .group(
-          "user_cards.card_name",
-          "user_cards.api_id",
-          "user_cards.cardtype",
-          "user_cards.season",
-          "original_card_details.team"
-        )
-        .order(Arel.sql(card_sort_order(sort)))
+      owned_counts = user_cards
+        .group(:card_name, :api_id, :cardtype, :season)
+        .count
+
+      teams = teams_by_card(owned_counts.keys)
+      cards = owned_counts.map do |(card_name, api_id, cardtype, season), owned_count|
+        {
+          card_name: card_name,
+          api_id: api_id,
+          cardtype: cardtype,
+          season: season,
+          team: teams[[api_id, season]],
+          owned_count: owned_count
+        }
+      end
+
+      sort_cards(cards, sort)
     end
 
     def all_cards_with_ownership(name, sort)
-      user_id = ActiveRecord::Base.connection.quote(Array(current_user&.id).first)
       latest_approved_card_ids = OriginalCard
         .where(approved: true)
         .group(:name, :cardtype, :season)
-        .select("MAX(id)")
+        .maximum(:id)
+        .values
 
       cards = OriginalCard.where(id: latest_approved_card_ids)
-        .joins(<<~SQL.squish)
-          LEFT JOIN (
-            SELECT card_name, season, cardtype, COUNT(*) AS owned_count
-            FROM user_cards
-            WHERE user_id = #{user_id}
-            GROUP BY card_name, season, cardtype
-          ) ownership
-            ON ownership.card_name = original_cards.name
-            AND ownership.season = original_cards.season
-            AND ownership.cardtype = original_cards.cardtype
-        SQL
-        .select(
-          "original_cards.name AS card_name",
-          "original_cards.api_id",
-          "original_cards.cardtype",
-          "original_cards.season",
-          "original_cards.team",
-          "COALESCE(ownership.owned_count, 0) AS owned_count"
-        )
+      cards = filter_by_name(cards, :name, name)
 
-      cards = cards.where("original_cards.name LIKE ?", "%#{name}%") if name.present?
-      cards.order(Arel.sql(all_cards_sort_order(sort)))
+      owned_counts = (current_user&.user_cards || UserCard.none)
+        .group(:card_name, :season, :cardtype)
+        .count
+
+      grouped_cards = cards.map do |card|
+        {
+          card_name: card.name,
+          api_id: card.api_id,
+          cardtype: card.cardtype,
+          season: card.season,
+          team: card.team,
+          owned_count: owned_counts.fetch([card.name, card.season, card.cardtype], 0)
+        }
+      end
+
+      sort_cards(grouped_cards, sort)
     end
 
     def unique_card_count(user_cards)
@@ -290,39 +278,86 @@ class Api::V1::UserCardsController < ApplicationController
     def serialize_grouped_cards(user_cards)
       user_cards.map do |card|
         {
-          card_name: card.card_name,
-          api_id: card.api_id,
-          cardtype: card.cardtype,
-          season: card.season,
-          team: card.read_attribute(:team),
-          owned_count: card.read_attribute(:owned_count).to_i
+          card_name: card[:card_name],
+          api_id: card[:api_id],
+          cardtype: card[:cardtype],
+          season: card[:season],
+          team: card[:team],
+          owned_count: card[:owned_count].to_i
         }
       end
     end
 
-    def card_sort_order(sort)
-      {
-        "player_name_asc" => "user_cards.card_name ASC, user_cards.season ASC, user_cards.api_id ASC",
-        "player_name_desc" => "user_cards.card_name DESC, user_cards.season ASC, user_cards.api_id ASC",
-        "team_name_asc" => "original_card_details.team IS NULL ASC, original_card_details.team ASC, user_cards.card_name ASC",
-        "team_name_desc" => "original_card_details.team IS NULL ASC, original_card_details.team DESC, user_cards.card_name ASC",
-        "owned_desc" => "owned_count DESC, user_cards.card_name ASC",
-        "owned_asc" => "owned_count ASC, user_cards.card_name ASC",
-        "rarity_desc" => "user_cards.cardtype DESC, user_cards.card_name ASC",
-        "rarity_asc" => "user_cards.cardtype ASC, user_cards.card_name ASC"
-      }.fetch(sort, "user_cards.cardtype DESC, user_cards.card_name ASC")
+    def teams_by_card(card_keys)
+      api_ids = card_keys.map { |(_, api_id, _, _)| api_id }.uniq
+      seasons = card_keys.map { |(_, _, _, season)| season }.uniq
+
+      OriginalCard.where(api_id: api_ids, season: seasons)
+        .pluck(:api_id, :season, :team)
+        .each_with_object({}) do |(api_id, season, team), teams|
+          key = [api_id, season]
+          teams[key] = [teams[key], team].compact.max
+        end
     end
 
-    def all_cards_sort_order(sort)
-      {
-        "player_name_asc" => "original_cards.name ASC, original_cards.season ASC, original_cards.api_id ASC",
-        "player_name_desc" => "original_cards.name DESC, original_cards.season ASC, original_cards.api_id ASC",
-        "team_name_asc" => "original_cards.team IS NULL ASC, original_cards.team ASC, original_cards.name ASC",
-        "team_name_desc" => "original_cards.team IS NULL ASC, original_cards.team DESC, original_cards.name ASC",
-        "owned_desc" => "owned_count DESC, original_cards.name ASC",
-        "owned_asc" => "owned_count ASC, original_cards.name ASC",
-        "rarity_desc" => "original_cards.cardtype DESC, original_cards.name ASC",
-        "rarity_asc" => "original_cards.cardtype ASC, original_cards.name ASC"
-      }.fetch(sort, "original_cards.cardtype DESC, original_cards.name ASC")
+    def sort_cards(cards, sort)
+      direction = sort&.end_with?("_desc") ? -1 : 1
+      sort_field = sort.to_s.delete_suffix("_asc").delete_suffix("_desc")
+
+      cards.sort do |left, right|
+        comparison = case sort_field
+        when "player_name"
+          compare_text(left[:card_name], right[:card_name]) * direction
+        when "team_name"
+          compare_teams(left[:team], right[:team], direction)
+        when "owned"
+          (left[:owned_count] <=> right[:owned_count]) * direction
+        when "rarity"
+          compare_rarity(left, right) * direction
+        else
+          compare_rarity(left, right) * -1
+        end
+
+        next comparison unless comparison.zero?
+
+        if sort_field == "player_name"
+          compare_values(left[:season], right[:season]).nonzero? ||
+            compare_text(left[:api_id], right[:api_id])
+        else
+          compare_text(left[:card_name], right[:card_name])
+        end
+      end
+    end
+
+    def compare_teams(left, right, direction)
+      return 0 if left == right
+      return 1 if left.nil?
+      return -1 if right.nil?
+
+      compare_text(left, right) * direction
+    end
+
+    def compare_rarity(left, right)
+      UserCard.cardtypes.fetch(left[:cardtype]) <=>
+        UserCard.cardtypes.fetch(right[:cardtype])
+    end
+
+    def compare_text(left, right)
+      left.to_s.downcase <=> right.to_s.downcase
+    end
+
+    def compare_values(left, right)
+      left.nil? ? -1 : right.nil? ? 1 : left <=> right
+    end
+
+    def paginate_cards(cards)
+      cards.slice(paginate_offset, per_page) || []
+    end
+
+    def filter_by_name(scope, column, name)
+      return scope if name.blank?
+
+      pattern = "%#{ActiveRecord::Base.sanitize_sql_like(name)}%"
+      scope.where(scope.klass.arel_table[column].matches(pattern))
     end
 end
