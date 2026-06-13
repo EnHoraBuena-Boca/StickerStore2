@@ -124,7 +124,7 @@ export default function BasicTextFields() {
           gridTemplateRows: "auto auto",
           gap: 2,
           justifyContent: "center",
-          width: "100vw",
+          width: "100%",
         }}
       >
         <Div>

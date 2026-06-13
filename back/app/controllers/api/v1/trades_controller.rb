@@ -13,7 +13,7 @@ class Api::V1::TradesController < ApplicationController
         next
       end
       @trades << tps.trade_id
-      @user2_name << User.where(id: TradeParticipant.where(trade_id: tps.trade_id).where.not(user_id: session[:current_user_id]).pick(:user_id)).pick(:first_name)
+      @user2_name << User.where(id: TradeParticipant.where(trade_id: tps.trade_id).where.not(user_id: session[:current_user_id]).pick(:user_id)).pick(:username)
       @current_user_accept << tps.accept
     end
 
@@ -39,7 +39,7 @@ class Api::V1::TradesController < ApplicationController
       end
     end
     @current_user_accept = TradeParticipant.where(trade: @trade).where(user_id: session[:current_user_id]).pick(:accept)
-    @user2_name = User.where(id: TradeParticipant.where(trade: @trade).where.not(user_id: session[:current_user_id]).pick(:user_id)).pick(:first_name)
+    @user2_name = User.where(id: TradeParticipant.where(trade: @trade).where.not(user_id: session[:current_user_id]).pick(:user_id)).pick(:username)
 
 
     render json: { user_trade_items: user_trade_items, user2_trade_items: user2_trade_items, current_user_accept: @current_user_accept, user2_name: @user2_name}
@@ -49,7 +49,7 @@ class Api::V1::TradesController < ApplicationController
   # POST /trades
   def create
     user_1 = User.find_by(id: session[:current_user_id])
-    user_2 = User.find_by(first_name: params[:receiver])
+    user_2 = User.find_by(username: params[:receiver])
 
 
     Trade.transaction do

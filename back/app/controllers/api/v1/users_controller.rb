@@ -3,13 +3,13 @@ class Api::V1::UsersController < ApplicationController
 
   # GET /users
   def index
-    @users = User.pluck(:first_name)
+    @users = User.pluck(:username)
 
     render json: @users
   end
 
   def users_but_me
-    @users = User.where.not(id: session[:current_user_id]).pluck(:first_name)
+    @users = User.where.not(id: session[:current_user_id]).pluck(:username)
 
     render json: @users
   end
@@ -32,10 +32,10 @@ class Api::V1::UsersController < ApplicationController
 
   # POST /api/v1/login
   def login
-    user = User.find_by(first_name: params[:user][:first_name])
-    if user&.password == params[:user][:password]
+    user = User.find_by(username: params[:username])
+    if user&.password == params[:password]
       session[:current_user_id] = user.id
-      render json: { id: user.id, firstname: user.first_name}, status: :ok
+      render json: { id: user.id, username: user.username }, status: :ok
     else
       render json: { error: "Invalid credentials" }, status: :unauthorized
     end
@@ -75,6 +75,6 @@ class Api::V1::UsersController < ApplicationController
     end
     # Only allow a list of trusted parameters through.
     def user_params
-      params.permit(:first_name, :password)
+      params.permit(:username, :password)
     end
 end

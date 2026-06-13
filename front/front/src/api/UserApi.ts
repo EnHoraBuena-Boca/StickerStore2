@@ -9,7 +9,7 @@ export async function getUser(username: any, password: any) {
         "Content-Type": "application/json",
       },
       credentials: "include",
-      body: JSON.stringify({ first_name: username, password: password }),
+      body: JSON.stringify({ username: username, password: password }),
     });
     if (!response.ok) {
       throw new Error(`Response status: ${response.status}`);

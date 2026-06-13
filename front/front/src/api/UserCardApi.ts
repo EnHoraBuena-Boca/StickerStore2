@@ -46,12 +46,21 @@ export async function UserCardCount() {
   }
 }
 
-export async function CardsWithParams(raw: FormData) {
+export async function CardsWithParams(
+  name: string,
+  sort: string,
+  page: number,
+  perPage: number,
+  includeUnowned = false,
+) {
   const url = `${api}/api/v1/cards_with_params`;
 
   const formData = new FormData();
-  formData.append("name", raw.get("CardName") as string);
-  formData.append("cardtype", raw.get("type") as string);
+  formData.append("name", name);
+  formData.append("sort", sort);
+  formData.append("page", page.toString());
+  formData.append("per_page", perPage.toString());
+  formData.append("include_unowned", includeUnowned.toString());
 
   try {
     const response = await fetch(url, {

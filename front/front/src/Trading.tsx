@@ -62,7 +62,7 @@ export default function Trading() {
         sx={{
           display: "flex",
           justifyContent: "center",
-          width: "100vw",
+          width: "100%",
         }}
       >
         <Box

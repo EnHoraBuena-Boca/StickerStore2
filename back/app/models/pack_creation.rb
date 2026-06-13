@@ -17,11 +17,14 @@ class PackCreation
     return pack
   end
 
+
   def pack_cards
     pack = pack_rarities
     cards = Array.new
     for rarity in pack
-      card = OriginalCard.find(OriginalCard.where(cardtype: rarity).pluck(:id).sample)
+      card = OriginalCard.find(
+        OriginalCard.where(cardtype: rarity, approved: true).pluck(:id).sample
+      )
       cards.append(card)
     end
     return cards

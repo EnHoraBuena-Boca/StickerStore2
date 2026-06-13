@@ -34,3 +34,5 @@
 back/log/*.log
 back/log/*.log
 back/log/*.log.*
+back/.env
+back/config/database.yml
