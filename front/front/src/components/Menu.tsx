@@ -8,6 +8,7 @@ import Tooltip from "@mui/material/Tooltip";
 import SignUp from "./SignUp.tsx";
 import { Link } from "react-router-dom";
 import { useGlobalContext } from "../utils/ContextProvider";
+import { loginRequestedEvent } from "../utils/authEvents.ts";
 import { LogOut } from "../api/UserApi.ts";
 export default function AccountMenu() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -32,6 +33,15 @@ export default function AccountMenu() {
   const SignUphandleClose = () => {
     setOpen(false);
   };
+
+  React.useEffect(() => {
+    const handleLoginRequest = () => setOpen(true);
+
+    window.addEventListener(loginRequestedEvent, handleLoginRequest);
+    return () => {
+      window.removeEventListener(loginRequestedEvent, handleLoginRequest);
+    };
+  }, []);
 
   const handleLogOut = () => {
     LogOut().then(() => {

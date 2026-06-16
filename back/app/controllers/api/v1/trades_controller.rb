@@ -36,18 +36,16 @@ class Api::V1::TradesController < ApplicationController
       @trades << tps.trade_id
       @user2_name << User.where(id: other_user_id).pick(:username)
       @current_user_accept << tps.accept
-      @current_user_rarities << rarity_counts(
+      @current_user_rarities << trade_item_rarity_counts(
         trade_items
           .select { |item| item.offered_by_user_id == logged_in_user_id }
-          .map(&:user_card)
       )
-      @other_user_rarities << rarity_counts(
+      @other_user_rarities << trade_item_rarity_counts(
         trade_items
           .select { |item| item.offered_by_user_id == other_user_id }
-          .map(&:user_card)
       )
       @trade_errors << trade_items.any? do |item|
-        item.user_card.user_id != item.offered_by_user_id
+        item.user_card.nil? || item.user_card.user_id != item.offered_by_user_id
       end
     end
 
@@ -72,6 +70,11 @@ class Api::V1::TradesController < ApplicationController
 
     trade_items.each do |item|
       card = item.user_card
+      if card.nil?
+        unavailable_card_ids << item.user_card_id.to_s
+        next
+      end
+
       target = item.offered_by_user_id == current_user_id ?
         user_trade_items :
         user2_trade_items
@@ -137,60 +140,42 @@ class Api::V1::TradesController < ApplicationController
   def update
     @trade = Trade.pending.find(params[:id])
     card_ids = Array(params[:combinedCards]).uniq
-    existing_card_ids = @trade.trade_items.pluck(:user_card_id)
-    diff = (existing_card_ids - card_ids) | (card_ids - existing_card_ids)
+    existing_card_ids = @trade.trade_items.pluck(:user_card_id).map(&:to_s)
     participant_1 = @trade.trade_participants.first
     participant_2 = @trade.trade_participants.second
+    current_participant = @trade.trade_participants.find_by(user_id: current_user_id)
 
-    if diff.empty?
-      Trade.transaction do
-        @trade.lock!
-        trade_cards = validate_cards_for_acceptance!(@trade)
-        participant_ids = [participant_1.user_id, participant_2.user_id]
+    unless current_participant
+      return render json: { error: "You are not a participant in this trade" }, status: :forbidden
+    end
 
-        trade_cards.each do |item, card|
-          receiving_user_id = participant_ids.find do |user_id|
-            user_id != item.offered_by_user_id
-          end
-          card.update!(user_id: receiving_user_id)
+    unless card_ids.sort == existing_card_ids.sort
+      return render json: {
+        error: "Offered trades are locked and cannot be edited"
+      }, status: :unprocessable_content
+    end
+
+    if current_participant.accept?
+      return render json: {
+        error: "You have already accepted this offer"
+      }, status: :unprocessable_content
+    end
+
+    Trade.transaction do
+      @trade.lock!
+      trade_cards = validate_cards_for_acceptance!(@trade)
+      participant_ids = [participant_1.user_id, participant_2.user_id]
+
+      trade_cards.each do |item, card|
+        receiving_user_id = participant_ids.find do |user_id|
+          user_id != item.offered_by_user_id
         end
-
-        participant_1.update!(accept: true)
-        participant_2.update!(accept: true)
-        @trade.update!(status: :accepted)
+        card.update!(user_id: receiving_user_id)
       end
 
-    else
-      return render json: { error: "A trade must include at least one card" }, status: :unprocessable_content if card_ids.empty?
-
-      Trade.transaction do
-        @trade.lock!
-        cards = lock_trade_cards!(card_ids)
-        validate_trade_owners!(cards, [participant_1.user_id, participant_2.user_id])
-        proposer_id = current_user_id
-        ensure_cards_available!(
-          cards.select { |card| card.user_id == proposer_id },
-          excluding_trade: @trade
-        )
-
-        @trade.trade_items.delete_all
-
-        cards.each do |card|
-          @trade.trade_items.create!(
-            user_card: card,
-            offered_by_user_id: card.user_id
-          )
-        end
-
-        if current_user_id == participant_1.user_id
-          participant_1.update!(accept: true)
-          participant_2.update!(accept: false)
-
-        else
-          participant_1.update!(accept: false)
-          participant_2.update!(accept: true)        
-        end
-      end
+      participant_1.update!(accept: true)
+      participant_2.update!(accept: true)
+      @trade.update!(status: :accepted)
     end
 
     render json: @trade, status: :ok
@@ -208,9 +193,10 @@ class Api::V1::TradesController < ApplicationController
   end
 
   private
-    def rarity_counts(cards)
-      cards.each_with_object(Hash.new(0)) do |card, counts|
-        counts[card.cardtype] += 1
+    def trade_item_rarity_counts(items)
+      items.each_with_object(Hash.new(0)) do |item, counts|
+        rarity = item.snapshot_rarity
+        counts[rarity] += 1 if rarity
       end
     end
 
@@ -238,9 +224,9 @@ class Api::V1::TradesController < ApplicationController
             end&.username,
             status: trade.status,
             offered_card_count: offered_items.length,
-            offered_rarity_counts: rarity_counts(offered_items.map(&:user_card)),
+            offered_rarity_counts: trade_item_rarity_counts(offered_items),
             received_card_count: received_items.length,
-            received_rarity_counts: rarity_counts(received_items.map(&:user_card)),
+            received_rarity_counts: trade_item_rarity_counts(received_items),
             completed_at: trade.updated_at
           }
         end

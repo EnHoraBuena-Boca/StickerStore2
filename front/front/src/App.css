@@ -33,6 +33,51 @@ html, body {
   gap: 16px;
 }
 
+.header-navigation {
+  display: flex;
+  align-items: center;
+}
+
+.header-navigation > * {
+  position: relative;
+  padding-left: 12px;
+  margin-left: 12px;
+}
+
+.header-navigation > *::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1px;
+  height: 24px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(189, 149, 35, 0.8),
+    transparent
+  );
+  transform: translateY(-50%);
+}
+
+.header-navigation .MuiButton-root {
+  min-width: auto;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.header-navigation > *:first-child .MuiButton-root + .MuiButton-root {
+  margin-left: 2px;
+  padding-left: 14px;
+  border-left: 1px solid rgba(189, 149, 35, 0.65);
+  border-radius: 0 6px 6px 0;
+}
+
 .site-header .site-title,
 .site-header .site-title:link,
 .site-header .site-title:visited,
@@ -67,6 +112,24 @@ html, body {
 
   .header-right {
     gap: 6px;
+  }
+
+  .header-navigation > * {
+    padding-left: 5px;
+    margin-left: 5px;
+  }
+
+  .header-navigation > *::before {
+    height: 20px;
+  }
+
+  .header-navigation .MuiButton-root {
+    padding-inline: 5px;
+    font-size: 0.78rem;
+  }
+
+  .header-navigation > *:first-child .MuiButton-root + .MuiButton-root {
+    padding-left: 10px;
   }
 
   .site-header .site-title {

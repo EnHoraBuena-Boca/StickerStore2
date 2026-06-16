@@ -1,38 +1,32 @@
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-import Sticker from './assets/Sticker.svg'
-import Sticker1 from './assets/Sticker1.svg'
-import Sticker2 from './assets/Sticker2.svg'
+import Box from "@mui/material/Box";
+import StickersHome from "./assets/StickersHome.mp4";
 
 export default function Home() {
   return (
-    <>
-     <Box  sx={{ display: 'flex', justifyContent: 'center',  alignItems: 'center', width: '100%', height: "30vh"}}>
-      <Grid container spacing={4} sx={{ width: 500, height: 250 }} justifyContent="center" alignItems="center" >
-        <Grid display="flex" justifyContent="center" alignItems="center" size="grow">
-          <img src={Sticker} />
-        </Grid>
-        <Grid display="flex" justifyContent="center" alignItems="center" size = "grow">
-           <img src={Sticker1} />
-        </Grid>
-        <Grid display="flex" justifyContent="center" alignItems="center" size="grow">
-           <img src={Sticker2} />
-        </Grid>
-      </Grid>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        width: "100%",
+        minHeight: "60vh",
+      }}
+    >
+      <Box
+        component="video"
+        src={StickersHome}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        sx={{
+          display: "block",
+          width: "100%",
+          maxWidth: 900,
+          maxHeight: "70vh",
+          objectFit: "contain",
+        }}
+      />
     </Box>
-    <Box  sx={{ display: 'flex', justifyContent: 'center',  alignItems: 'center', width: '100%', height: "30vh"}}>
-      <Grid container spacing={4} sx={{ width: 500, height: 100 }} justifyContent="center" alignItems="center" >
-        <Grid display="flex" justifyContent="center" alignItems="center" size = "grow">
-           <img src={Sticker2} />
-        </Grid>
-        <Grid display="flex" justifyContent="center" alignItems="center" size = "grow">
-           <img src={Sticker1} />
-        </Grid>
-        <Grid display="flex" justifyContent="center" alignItems="center" size="grow">
-           <img src={Sticker} />
-        </Grid>
-      </Grid>
-    </Box>
-    </>
   );
 }

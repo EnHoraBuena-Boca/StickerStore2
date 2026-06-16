@@ -8,6 +8,7 @@ import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 
 import { Link, useLocation } from "react-router-dom";
 import { useGlobalContext } from "../utils/ContextProvider.tsx";
+import { requestLogin } from "../utils/authEvents.ts";
 import {
   Trades,
   tradesUpdatedEvent,
@@ -25,6 +26,11 @@ export default function FunMenu() {
   const open = Boolean(anchorEl);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (!auth) {
+      requestLogin();
+      return;
+    }
+
     setAnchorEl(event.currentTarget);
   };
 
@@ -85,36 +91,34 @@ export default function FunMenu() {
   return (
     <React.Fragment>
       <Box sx={{ display: "flex", alignItems: "center", textAlign: "center" }}>
-        {auth && (
-          <Button
-            onClick={handleClick}
-            variant="text"
-            size="small"
-            sx={{ height: "100%", color: "#ffffff" }}
-            aria-controls={open ? "account-menu" : undefined}
-            aria-haspopup="true"
-            aria-expanded={open ? "true" : undefined}
-            aria-label={
-              pendingTradeCount > 0
-                ? `Trading, ${pendingTradeCount} pending action`
-                : "Trading"
-            }
-          >
-            Trading
-            {pendingTradeCount > 0 && (
-              <Badge
-                badgeContent={pendingTradeCount}
-                color="error"
-                max={9}
-                sx={{ ml: 1 }}
-              >
-                <NotificationsActiveIcon
-                  sx={{ color: "#f6d365", fontSize: 20 }}
-                />
-              </Badge>
-            )}
-          </Button>
-        )}
+        <Button
+          onClick={handleClick}
+          variant="text"
+          size="small"
+          sx={{ height: "100%", color: "#ffffff" }}
+          aria-controls={auth && open ? "account-menu" : undefined}
+          aria-haspopup={auth ? "true" : undefined}
+          aria-expanded={auth && open ? "true" : undefined}
+          aria-label={
+            pendingTradeCount > 0
+              ? `Trading, ${pendingTradeCount} pending action`
+              : "Trading"
+          }
+        >
+          Trading
+          {pendingTradeCount > 0 && (
+            <Badge
+              badgeContent={pendingTradeCount}
+              color="error"
+              max={9}
+              sx={{ ml: 1 }}
+            >
+              <NotificationsActiveIcon
+                sx={{ color: "#f6d365", fontSize: 20 }}
+              />
+            </Badge>
+          )}
+        </Button>
       </Box>
       <Menu
         anchorEl={anchorEl}

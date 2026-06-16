@@ -104,6 +104,7 @@ export default function TradeModal({
   const [pickerError, setPickerError] = React.useState<string | null>(null);
   const [actionPending, setActionPending] = React.useState(false);
   const isIncomingTrade = Boolean(trade_id && canSubmit);
+  const isExistingTrade = Boolean(trade_id);
   const hasSelectedCards = myCards.length + theirCards.length > 0;
   const tradeHasUnavailableCards =
     isIncomingTrade && problemCardIds.length > 0;
@@ -269,6 +270,10 @@ export default function TradeModal({
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isExistingTrade && !isIncomingTrade) {
+      return;
+    }
+
     setActionPending(true);
     setActionError("");
     setProblemCardIds([]);
@@ -277,7 +282,7 @@ export default function TradeModal({
       (card) => card.uuid,
     );
 
-    const request = trade_id
+    const request = isIncomingTrade && trade_id
       ? updateTrade(selectedCardIds, trade_id)
       : createTrade(selectedCardIds, user);
 
@@ -323,7 +328,7 @@ export default function TradeModal({
   ) => {
     const setSelectedCards = side === "mine" ? setMyCards : setTheirCards;
     const addDisabled = side === "theirs" && !user;
-    const readOnly = isIncomingTrade;
+    const readOnly = isExistingTrade;
 
     return (
       <Box
@@ -344,70 +349,109 @@ export default function TradeModal({
             {subtitle}
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
+            alignItems: "start",
+            gap: 1.25,
+          }}
+        >
           {selectedCards.map((card, index) => {
             const hasProblem = problemCardIds.includes(card.uuid);
+            const rarityColor = rarityColors[card.cardtype] ?? "#6b7280";
 
             return (
               <Box
-              key={card.uuid}
-              sx={{
-                minHeight: 48,
-                display: "grid",
-                gridTemplateColumns: "8px minmax(0, 1fr) auto auto",
-                alignItems: "center",
-                gap: 1.25,
-                pr: 0.5,
-                overflow: "hidden",
-                border: hasProblem ? "2px solid #ef4444" : "1px solid #4b5563",
-                borderRadius: 1.5,
-                backgroundColor: hasProblem ? "#451a1a" : "#1f2937",
-              }}
-            >
-              <Box
-                sx={{
-                  alignSelf: "stretch",
-                  backgroundColor:
-                    rarityColors[card.cardtype] ?? "#6b7280",
-                }}
-              />
-              <Typography
+                key={card.uuid}
                 sx={{
                   minWidth: 0,
-                  fontWeight: 700,
+                  p: 0.75,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "stretch",
+                  gap: 0.5,
+                  position: "relative",
                   overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
+                  border: `2px solid ${hasProblem ? "#ef4444" : rarityColor}`,
+                  borderRadius: 2,
+                  backgroundColor: hasProblem ? "#451a1a" : "#1f2937",
+                  boxShadow: hasProblem
+                    ? "0 0 12px rgba(239, 68, 68, 0.55)"
+                    : `0 0 8px color-mix(in srgb, ${rarityColor} 35%, transparent)`,
                 }}
               >
-                {card.card_name}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: hasProblem ? "#fecaca" : "#9ca3af",
-                  fontWeight: 700,
-                }}
-              >
-                {hasProblem ? "Unavailable" : card.cardtype}
-              </Typography>
-              {!readOnly && (
-                <IconButton
-                  aria-label={`Remove ${card.card_name}`}
-                  size="small"
-                  onClick={() =>
-                    setSelectedCards((current) =>
-                      current.filter((_, cardIndex) => cardIndex !== index),
-                    )
-                  }
+                {hasProblem && (
+                  <Box
+                    component="span"
+                    sx={{
+                      position: "absolute",
+                      top: 5,
+                      left: 5,
+                      zIndex: 2,
+                      px: 0.75,
+                      py: 0.25,
+                      color: "#ffffff",
+                      fontSize: "0.65rem",
+                      fontWeight: 900,
+                      borderRadius: 1,
+                      backgroundColor: "#dc2626",
+                    }}
+                  >
+                    UNAVAILABLE
+                  </Box>
+                )}
+                <AdvancedImage
+                  cldImg={cld.image(
+                    `${card.season}/${card.cardtype}/${card.api_id}`,
+                  )}
+                  plugins={[lazyload(), placeholder()]}
+                  style={{
+                    width: "100%",
+                    height: "160px",
+                    objectFit: "contain",
+                    opacity: hasProblem ? 0.45 : 1,
+                    filter: hasProblem ? "grayscale(1)" : "none",
+                  }}
+                />
+                <Typography
+                  variant="body2"
                   sx={{
-                    color: "#d1d5db",
-                    "&:hover": { color: "#ffffff", backgroundColor: "#991b1b" },
+                    minWidth: 0,
+                    fontWeight: 700,
+                    textAlign: "center",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              )}
+                  {card.card_name}
+                </Typography>
+                {!readOnly && (
+                  <IconButton
+                    aria-label={`Remove ${card.card_name}`}
+                    size="small"
+                    onClick={() =>
+                      setSelectedCards((current) =>
+                        current.filter((_, cardIndex) => cardIndex !== index),
+                      )
+                    }
+                    sx={{
+                      position: "absolute",
+                      top: 5,
+                      right: 5,
+                      zIndex: 2,
+                      color: "#ffffff",
+                      backgroundColor: "rgba(17, 24, 39, 0.9)",
+                      "&:hover": {
+                        color: "#ffffff",
+                        backgroundColor: "#991b1b",
+                      },
+                    }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                )}
               </Box>
             );
           })}
@@ -418,7 +462,7 @@ export default function TradeModal({
               disabled={addDisabled}
               onClick={() => void openCardPicker(side)}
               sx={{
-                minHeight: 48,
+                minHeight: 210,
                 color: "#e5e7eb",
                 borderColor: "#6b7280",
                 borderStyle: "dashed",
@@ -460,13 +504,15 @@ export default function TradeModal({
             <Typography id="trade-modal-title" variant="h5" fontWeight={800}>
               {isIncomingTrade
                 ? "Review Trade"
-                : trade_id
-                  ? "Edit Trade"
+                : isExistingTrade
+                  ? "View Trade"
                   : "Create New Trade"}
             </Typography>
             <Typography variant="body2" sx={{ color: "#9ca3af" }}>
               {isIncomingTrade
                 ? "Review the proposed cards, then accept or decline the trade."
+                : isExistingTrade
+                  ? "This offer is locked while the other user reviews it."
                 : "Add as many cards as needed from either collection."}
             </Typography>
           </Box>
@@ -500,7 +546,7 @@ export default function TradeModal({
             <Typography sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>
               Trade with
             </Typography>
-            {isIncomingTrade ? (
+            {isExistingTrade ? (
               <Typography
                 sx={{
                   px: 1.5,
@@ -606,23 +652,23 @@ export default function TradeModal({
             }}
           >
             {!tradeHasUnavailableCards && (
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={
-                  !canSubmit ||
-                  !user ||
-                  actionPending ||
-                  (!trade_id && !hasSelectedCards)
-                }
-                sx={{ minWidth: 150 }}
-              >
-                {isIncomingTrade
-                  ? "Accept Trade"
-                  : trade_id
-                    ? "Save Trade"
-                    : "Submit Trade"}
-              </Button>
+              <>
+                {(!isExistingTrade || isIncomingTrade) && (
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={
+                      !canSubmit ||
+                      !user ||
+                      actionPending ||
+                      (!isExistingTrade && !hasSelectedCards)
+                    }
+                    sx={{ minWidth: 150 }}
+                  >
+                    {isIncomingTrade ? "Accept Trade" : "Submit Trade"}
+                  </Button>
+                )}
+              </>
             )}
             {trade_id && (
               <Button
