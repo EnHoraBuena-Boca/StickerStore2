@@ -6,6 +6,4 @@ class User < ApplicationRecord
   has_many :trade_participants
   has_many :trades, through: :trade_participants
 
-
-  self.primary_key = [:id]
 end

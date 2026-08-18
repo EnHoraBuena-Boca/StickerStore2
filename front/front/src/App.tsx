@@ -28,8 +28,10 @@ function App() {
           <Link to="/" className="site-title">
             SSL Sticker Store
           </Link>
-          <MyCardsMenu />
-          <TradingMenu />
+          <nav className="header-navigation" aria-label="Main navigation">
+            <MyCardsMenu />
+            <TradingMenu />
+          </nav>
         </div>
         <Menu />
       </header>

@@ -50,6 +50,39 @@ class Api::V1::UserCardsController < ApplicationController
   end
 
   def cards_by_rarity
+    if ActiveModel::Type::Boolean.new.cast(params[:visual])
+      user = params[:name].present? ? User.find_by(username: params[:name]) : current_user
+      return render json: [] unless user
+
+      locked_card_ids = TradeItem
+        .locked_in_pending_trade
+        .pluck(:user_card_id)
+      current_user_card_keys = current_user.user_cards.each_with_object({}) do |card, keys|
+        keys[[card.card_name, card.season, card.api_id, card.cardtype]] = true
+      end
+
+      cards = UserCard
+        .where(user_id: user.id)
+        .where.not(uuid: locked_card_ids)
+        .order(cardtype: :desc, card_name: :asc)
+        .group_by { |card| [card.card_name, card.season, card.api_id, card.cardtype] }
+        .map do |(card_name, season, api_id, cardtype), owned_cards|
+          {
+            card_name: card_name,
+            season: season,
+            api_id: api_id,
+            cardtype: cardtype,
+            owned_count: owned_cards.length,
+            uuids: owned_cards.map { |card| card.uuid.to_s },
+            current_user_owns: current_user_card_keys.key?(
+              [card_name, season, api_id, cardtype]
+            )
+          }
+        end
+
+      return render json: cards
+    end
+
     user_id = if params[:name] == "undefined"
       session[:current_user_id]
     else
@@ -112,71 +145,54 @@ class Api::V1::UserCardsController < ApplicationController
   end
 
   def factory_pack
-    @cards =[]
-    correct_trade = false
-
-    case params[:rarity]
-    when "Bronze"
-      cards = UserCard.where(uuid: params[:cards])
-      if cards.size == 2 && cards.all? { |card| card.cardtype == "Bronze" }
-        @new_card = get_random_card(0)
-        cards.delete_all
-        correct_trade = true
-      end
-    when "Silver"
-      cards = UserCard.where(uuid: params[:cards])
-      if cards.size == 3 && cards.all? { |card| card.cardtype == "Bronze" }
-        @new_card = get_random_card(1)
-        cards.delete_all
-        correct_trade = true
-
-      end
-      if cards.size == 2 && cards.all? { |card| card.cardtype == "Silver" }
-        @new_card = get_random_card(1)
-        cards.delete_all
-        correct_trade = true
-
-      end
-    when "Gold"
-      cards = UserCard.where(uuid: params[:cards])
-      if cards.size == 3 && cards.all? { |card| card.cardtype == "Silver" }
-        @new_card = get_random_card(1)
-        cards.delete_all
-        correct_trade = true
-
-      end
-      if cards.size == 2 && cards.all? { |card| card.cardtype == "Gold" }
-        @new_card = get_random_card(1)
-        cards.delete_all
-        correct_trade = true
-      end
-
-    when "Diamond"
-      cards = UserCard.where(uuid: params[:cards])
-      if cards.size == 3 && cards.all? { |card| card.cardtype == "Gold" }
-        @new_card = get_random_card(1)
-        cards.delete_all
-        correct_trade = true
-      end
-      if cards.size == 2 && cards.all? { |card| card.cardtype == "Diamond" }
-        @new_card = get_random_card(1)
-        cards.delete_all
-        correct_trade = true
-
-      end
-    end
-    if correct_trade == true
-      UserCard.transaction do
-        user = User.find_by(id: session[:current_user_id])
-        @card = UserCard.create(user: user, season: @new_card.season, cardtype: @new_card.cardtype, api_id: @new_card.api_id, card_name: @new_card.name)
-      end
+    unless current_user
+      return render json: { error: "You must be logged in" }, status: :unauthorized
     end
 
-    if @card && correct_trade == true
+    selected_card_ids = Array(params[:cards]).map(&:to_s)
+    if selected_card_ids.empty? || selected_card_ids.uniq.length != selected_card_ids.length
+      return render json: { error: "Invalid factory card selection" }, status: :bad_request
+    end
+
+    UserCard.transaction do
+      cards = current_user.user_cards
+        .lock
+        .where(uuid: selected_card_ids)
+        .order(:uuid)
+        .to_a
+
+      locked_card_ids = TradeItem
+        .locked_in_pending_trade
+        .where(user_card_id: selected_card_ids)
+        .pluck(:user_card_id)
+
+      unless cards.length == selected_card_ids.length &&
+          locked_card_ids.empty? &&
+          valid_factory_trade?(cards, params[:rarity])
+        raise ActiveRecord::Rollback
+      end
+
+      @new_card = get_random_card(UserCard.cardtypes.fetch(params[:rarity]))
+      UserCard.where(uuid: cards.map(&:uuid)).delete_all
+      @card = current_user.user_cards.create!(
+        season: @new_card.season,
+        cardtype: @new_card.cardtype,
+        api_id: @new_card.api_id,
+        card_name: @new_card.name
+      )
+    end
+
+    if @card
       render json: @new_card
     else
-      render status: :bad_request
+      render json: {
+        error: "Selected cards are unavailable, locked in a trade, or invalid for this exchange"
+      }, status: :bad_request
     end
+  rescue KeyError
+    render json: { error: "Invalid factory rarity" }, status: :bad_request
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { errors: e.record.errors.full_messages }, status: :unprocessable_content
   end
 
   # POST /user_cards
@@ -218,6 +234,20 @@ class Api::V1::UserCardsController < ApplicationController
     def get_random_card(cardtype)
       random = OriginalCard.find(OriginalCard.where(cardtype: cardtype).pluck(:id).sample)
       return random
+    end
+
+    def valid_factory_trade?(cards, output_rarity)
+      requirements = {
+        "Bronze" => [["Bronze", 2]],
+        "Silver" => [["Bronze", 5], ["Silver", 2]],
+        "Gold" => [["Silver", 5], ["Gold", 2]],
+        "Diamond" => [["Gold", 5], ["Diamond", 2]]
+      }
+
+      requirements.fetch(output_rarity, []).any? do |input_rarity, card_count|
+        cards.length == card_count &&
+          cards.all? { |card| card.cardtype == input_rarity }
+      end
     end
 
     def grouped_user_cards(user_cards, sort)
@@ -278,12 +308,12 @@ class Api::V1::UserCardsController < ApplicationController
     def serialize_grouped_cards(user_cards)
       user_cards.map do |card|
         {
-          card_name: card[:card_name],
-          api_id: card[:api_id],
-          cardtype: card[:cardtype],
-          season: card[:season],
-          team: card[:team],
-          owned_count: card[:owned_count].to_i
+          card_name: card.fetch(:card_name),
+          api_id: card.fetch(:api_id),
+          cardtype: card.fetch(:cardtype),
+          season: card.fetch(:season),
+          team: card.fetch(:team, nil),
+          owned_count: card.fetch(:owned_count, 0).to_i
         }
       end
     end
@@ -307,11 +337,11 @@ class Api::V1::UserCardsController < ApplicationController
       cards.sort do |left, right|
         comparison = case sort_field
         when "player_name"
-          compare_text(left[:card_name], right[:card_name]) * direction
+          compare_text(left.fetch(:card_name), right.fetch(:card_name)) * direction
         when "team_name"
           compare_teams(left[:team], right[:team], direction)
         when "owned"
-          (left[:owned_count] <=> right[:owned_count]) * direction
+          (left.fetch(:owned_count) <=> right.fetch(:owned_count)) * direction
         when "rarity"
           compare_rarity(left, right) * direction
         else
@@ -321,10 +351,10 @@ class Api::V1::UserCardsController < ApplicationController
         next comparison unless comparison.zero?
 
         if sort_field == "player_name"
-          compare_values(left[:season], right[:season]).nonzero? ||
-            compare_text(left[:api_id], right[:api_id])
+          compare_values(left.fetch(:season), right.fetch(:season)).nonzero? ||
+            compare_text(left.fetch(:api_id), right.fetch(:api_id))
         else
-          compare_text(left[:card_name], right[:card_name])
+          compare_text(left.fetch(:card_name), right.fetch(:card_name))
         end
       end
     end
@@ -338,8 +368,8 @@ class Api::V1::UserCardsController < ApplicationController
     end
 
     def compare_rarity(left, right)
-      UserCard.cardtypes.fetch(left[:cardtype]) <=>
-        UserCard.cardtypes.fetch(right[:cardtype])
+      UserCard.cardtypes.fetch(left.fetch(:cardtype)) <=>
+        UserCard.cardtypes.fetch(right.fetch(:cardtype))
     end
 
     def compare_text(left, right)
