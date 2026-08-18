@@ -32,8 +32,8 @@ class Api::V1::UsersController < ApplicationController
 
   # POST /api/v1/login
   def login
-    user = User.find_by(username: params[:username])
-    if user&.password == params[:password]
+    user = User.authenticate_with_mybb(params[:username], params[:password])
+    if user
       session[:current_user_id] = user.id
       render json: { id: user.id, username: user.username }, status: :ok
     else

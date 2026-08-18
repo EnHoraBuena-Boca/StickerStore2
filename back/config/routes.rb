@@ -7,6 +7,9 @@ Rails.application.routes.draw do
   #API routes should be in /api/v1
   namespace :api do
     namespace :v1 do
+        namespace :external do
+          post 'pack_grants', to: 'pack_grants#create'
+        end
         post 'login', to: 'users#login'
         get 'me', to: 'users#me'
         post "logout", to: "users#logout"

@@ -2,8 +2,8 @@ class SessionController < ApplicationController
   before_action :require_login, only: [:update, :destroy]
 
   def create
-    user = User.find_by(username: params[:username])
-    if user&.password == params[:password]
+    user = User.authenticate_with_mybb(params[:username], params[:password])
+    if user
       # Save the user ID in the session so it can be used in
       # subsequent requests
       session[:current_user_id] = user.id
